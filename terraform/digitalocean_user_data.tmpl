@@ -1,0 +1,12 @@
+#cloud-config
+users:
+- name: minecraft
+  shell: /bin/bash
+  groups: sudo,wheel
+  ssh-authorized-keys: 
+  - ${public_key_data}
+  sudo:
+  - ALL=(ALL) NOPASSWD:ALL
+groups:
+- wheel
+
