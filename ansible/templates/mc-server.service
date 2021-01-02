@@ -1,0 +1,11 @@
+[Unit]
+Description=Minecraft Server
+
+[Service]
+User=minecraft
+Group=minecraft
+ExecStart={{ launch_command }}
+WorkingDirectory={{ working_dir }}
+
+[Install]
+WantedBy=multi-user.target

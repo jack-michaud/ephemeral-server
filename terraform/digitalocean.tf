@@ -18,7 +18,7 @@ resource "digitalocean_droplet" "minecraft" {
   size   = "s-2vcpu-4gb"
 
   user_data = templatefile("${path.module}/digitalocean_user_data.tmpl", {
-    public_key_data = var.public_key
+    public_key_data = file(var.public_key_path)
   })
 
 }

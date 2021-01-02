@@ -3,7 +3,9 @@
 
 base_dir=$(dirname $0)
 terraform_dir=$base_dir/terraform
-key_dir=$base_dir/config/keys
+config_dir=$base_dir/config
+ansible_dir=$base_dir/ansible
+key_dir=$config_dir/keys
 
 function build_env {
     source .env
@@ -28,65 +30,74 @@ function generate_keypair {
     #ssh-keygen -b 521 -t ecdsa -N '' -f $key_dir/$keyname 
   )
 
-  cat $key_dir/$keyname.pub
+  echo $(realpath $key_dir/$keyname)
 }
 
 function initialize {
   [[ -d $terraform_dir/.terraform ]] || terraform -chdir=$terraform_dir init
-  generate_keypair
+  generate_keypair > /dev/null
 }
 
 function apply_terraform {
-    PUBLIC_KEY=$(generate_keypair)
-    pushd $terraform_dir
+    PUBLIC_KEY_PATH=$(generate_keypair).pub
+    pushd $terraform_dir > /dev/null
     terraform \
       apply \
       -var "server_name=$SERVER_NAME" \
       -var "server_type=$SERVER_TYPE" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
-      -var "public_key=$PUBLIC_KEY" \
+      -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve
-    popd
+    popd > /dev/null
 }
 
 function destroy_server {
-    PUBLIC_KEY=$(generate_keypair)
-    pushd $terraform_dir
+    PUBLIC_KEY_PATH=$(generate_keypair).pub
+    pushd $terraform_dir > /dev/null
     terraform destroy \
       -var "server_name=$SERVER_NAME" \
       -var "server_type=$SERVER_TYPE" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
-      -var "public_key=$PUBLIC_KEY" \
+      -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve \
       -target=digitalocean_droplet.minecraft
-    popd
+    popd > /dev/null
 }
 function destroy_all {
-    pushd $terraform_dir
+    PUBLIC_KEY_PATH=$(generate_keypair).pub
+    pushd $terraform_dir > /dev/null
     terraform destroy \
       -var "server_name=$SERVER_NAME" \
       -var "server_type=$SERVER_TYPE" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
-      -var "public_key=$PUBLIC_KEY" \
+      -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve
-    popd
+    popd > /dev/null
 }
 
 function get_ip {
-    PUBLIC_KEY=$(generate_keypair)
-    pushd $terraform_dir
-    terraform output $base_dir/terraform | awk '{ print $3 }'
-    popd
+    pushd $terraform_dir > /dev/null
+    terraform output | awk '{ print $3 }'
+    popd > /dev/null
+}
+
+function ansible_install {
+  IP=$(get_ip)
+  PRIVATE_KEY_FILE=$(generate_keypair)
+  echo "minecraft ansible_host=${IP} ansible_user=minecraft ansible_port=22 ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}" \
+    > $config_dir/ansible_inventory
+  ansible-playbook -i $config_dir/ansible_inventory -e server_type=$SERVER_TYPE $ansible_dir/main.yml
 }
 
 initialize
 
-while getopts "dDcin:t:" OPTION; do
+while getopts "dDciIn:t:" OPTION; do
   case $OPTION in
     D) ACTION='destroy_all' ;;
     d) ACTION='destroy' ;;
     c) ACTION='create' ;;
     i) ACTION='get_ip' ;;
+    I) ACTION='ansible_install' ;;
     n) SERVER_NAME=$OPTARG ;;
     t) SERVER_TYPE=$OPTARG ;;
   esac
@@ -112,11 +123,15 @@ case $ACTION in
     exit 0
     ;;
   'create')
-    build_env && apply_terraform
+    build_env && apply_terraform && ansible_install
     exit 0
     ;;
   'get_ip')
     build_env && get_ip
+    exit 0
+    ;;
+  'ansible_install')
+    build_env && ansible_install
     exit 0
     ;;
   *)

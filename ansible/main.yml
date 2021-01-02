@@ -1,0 +1,44 @@
+- hosts: minecraft
+  become: true
+  vars_prompt:
+  - name: server_type
+    prompt: What type of minecraft server do you want?
+  vars:
+    persistent_mount: /opt/mc
+  tasks:
+  - name: Try to connect
+    ping:
+  - name: Make persistent volume folder
+    file:
+      path: "{{ persistent_mount }}"
+      state: directory
+      mode: '0755'
+      owner: minecraft
+      group: minecraft
+  - name: Mount persistent volume
+    ansible.posix.mount:
+      src: /dev/sda
+      path: "{{ persistent_mount }}"
+      state: mounted
+      fstype: ext4
+      opts: discard,defaults,noatime
+  - name: Install JRE
+    apt:
+      update_cache: true
+      pkg:
+      - openjdk-8-jre-headless
+  - name: Install vanilla latest
+    import_tasks: ./vanilla-latest.yml
+    when: server_type == 'vanilla-latest'
+  - name: Generate minecraft systemd service
+    template:
+      src: mc-server.service
+      dest: /etc/systemd/system
+      owner: root
+      group: root
+
+  - name: Start minecraft service
+    systemd:
+      name: mc-server
+      state: started
+      enabled: yes

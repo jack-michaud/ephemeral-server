@@ -8,7 +8,7 @@ variable "server_type" {
   description = "The type of minecraft server"
 }
 
-variable "public_key" {
-  description = "The content of the public key used to log into the server"
+variable "public_key_path" {
+  description = "The absolute path of the public key used to log into the server"
 }
 
