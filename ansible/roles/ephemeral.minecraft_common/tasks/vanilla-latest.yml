@@ -1,6 +1,6 @@
 - name: include vanilla variables
   include_vars:
-    file: ./vars/vanilla-latest.yml
+    file: ../vars/vanilla-latest.yml
 - name: Make vanilla folder
   file: 
     path: "{{ working_dir }}"

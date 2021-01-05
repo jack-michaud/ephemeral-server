@@ -41,11 +41,11 @@ function initialize {
 function apply_terraform {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
+      #-var "do_token=$DIGITAL_OCEAN_TOKEN" \
     terraform \
       apply \
+      -var "cloud_provider=aws" \
       -var "server_name=$SERVER_NAME" \
-      -var "server_type=$SERVER_TYPE" \
-      -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve
     popd > /dev/null
@@ -55,20 +55,21 @@ function destroy_server {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
+      -var "cloud_provider=digitalocean" \
       -var "server_name=$SERVER_NAME" \
-      -var "server_type=$SERVER_TYPE" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve \
-      -target=digitalocean_droplet.minecraft
+      -target='module.digitalocean[0].digitalocean_droplet.minecraft' \
+      -target='module.aws[0].aws_instance.minecraft'
     popd > /dev/null
 }
 function destroy_all {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
+      -var "cloud_provider=digitalocean" \
       -var "server_name=$SERVER_NAME" \
-      -var "server_type=$SERVER_TYPE" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve
@@ -77,16 +78,23 @@ function destroy_all {
 
 function get_ip {
     pushd $terraform_dir > /dev/null
-    terraform output | awk '{ print $3 }'
+    terraform output | grep 'ip' | awk '{ print $3 }'
+    popd > /dev/null
+}
+
+function get_device_location {
+    pushd $terraform_dir > /dev/null
+    terraform output | grep 'permanent_device' | awk '{ print $3 }'
     popd > /dev/null
 }
 
 function ansible_install {
   IP=$(get_ip)
+  DEVICE=$(get_device_location)
   PRIVATE_KEY_FILE=$(generate_keypair)
   echo "minecraft ansible_host=${IP} ansible_user=minecraft ansible_port=22 ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}" \
     > $config_dir/ansible_inventory
-  ansible-playbook -i $config_dir/ansible_inventory -e server_type=$SERVER_TYPE $ansible_dir/main.yml
+  ansible-playbook -i $config_dir/ansible_inventory -e server_type=$SERVER_TYPE -e persistent_device=$DEVICE $ansible_dir/main.yml
 }
 
 initialize

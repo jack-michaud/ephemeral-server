@@ -1,7 +1,3 @@
-provider "digitalocean" {
-  token = var.do_token
-}
-
 resource "digitalocean_volume" "mc_vol" {
   name   = "minecraft-volume-${var.server_name}"
   region = "nyc1"
@@ -14,12 +10,10 @@ resource "digitalocean_volume" "mc_vol" {
 resource "digitalocean_droplet" "minecraft" {
   image  = "ubuntu-18-04-x64"
   name   = "minecraft-server-${var.server_name}"
-  region = "nyc1"
-  size   = "s-2vcpu-4gb"
+  region = var.region
+  size   = var.instance_size
 
-  user_data = templatefile("${path.module}/digitalocean_user_data.tmpl", {
-    public_key_data = file(var.public_key_path)
-  })
+  user_data = var.user_data
 
 }
 

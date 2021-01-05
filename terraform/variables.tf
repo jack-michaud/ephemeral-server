@@ -1,11 +1,13 @@
-variable "do_token" {}
+variable "do_token" {
+  default = ""
+}
+
+variable "cloud_provider" {
+  description = "The cloud provider used. Currently supports AWS and Digital ocean."
+}
 
 variable "server_name" {
   description = "The unique server ID (I put it as guild name)"
-}
-
-variable "server_type" {
-  description = "The type of minecraft server"
 }
 
 variable "public_key_path" {

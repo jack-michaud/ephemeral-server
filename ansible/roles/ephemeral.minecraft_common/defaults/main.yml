@@ -1,0 +1,4 @@
+---
+server_type: vanilla-latest
+persistent_mount: /opt/mc
+persistent_device: /dev/sda
