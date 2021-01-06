@@ -1,19 +1,5 @@
 ---
 # tasks file for ephemeral.minecraft_common
-- name: Make persistent volume folder
-  file:
-    path: "{{ persistent_mount }}"
-    state: directory
-    mode: '0755'
-    owner: minecraft
-    group: minecraft
-- name: Mount persistent volume
-  ansible.posix.mount:
-    src: "{{ persistent_device }}"
-    path: "{{ persistent_mount }}"
-    state: mounted
-    fstype: ext4
-    opts: discard,defaults,noatime
 - name: Install JRE
   apt:
     update_cache: true

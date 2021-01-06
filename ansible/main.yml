@@ -1,11 +1,15 @@
 - hosts: minecraft
   become: true
+  vars:
+    persistent_mount: /opt/mc
   vars_prompt:
   - name: server_type
     prompt: what type of minecraft server do you want?
   - name: persistent_device
     prompt: where is the persistent device? (/dev/sdx)
   roles:
+    - name: ephemeral.formatdisk
+      device: "{{ persistent_device }}"
     - name: ephemeral.minecraft_common
       server_type: "{{ server_type }}"
       persistent_device: "{{ persistent_device }}"

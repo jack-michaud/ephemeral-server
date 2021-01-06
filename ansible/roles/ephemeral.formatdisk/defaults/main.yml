@@ -1,2 +1,4 @@
 ---
 # defaults file for ephemeral.formatdisk
+device:
+persistent_device: /dev/sda
