@@ -3,7 +3,7 @@
 Hosting as you need it.
 
 Provides a wrapper around `terraform` and `ansible` that will automatically install
-a variety of programs onto a digital ocean droplet. Programs are installed onto a
+a variety of programs onto a virtual private server (on AWS or Digital Ocean). Programs are installed onto a
 persistent volume that persist after the more expensive VPS is shut down.
 
 ## Usage
