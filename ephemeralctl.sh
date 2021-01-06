@@ -9,6 +9,10 @@ key_dir=$config_dir/keys
 
 function build_env {
     source .env
+    if [ -z $CLOUD_PROVIDER ]; then
+      echo 'Error: must provide CLOUD_PROVIDER in environment variables (or in .env)'
+      exit 1
+    fi
     if [ -z $DIGITAL_OCEAN_TOKEN ]; then
       echo 'Error: must provide DIGITAL_OCEAN_TOKEN in environment variables (or in .env)'
       exit 1
@@ -41,10 +45,10 @@ function initialize {
 function apply_terraform {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
-      #-var "do_token=$DIGITAL_OCEAN_TOKEN" \
     terraform \
       apply \
-      -var "cloud_provider=aws" \
+      -var "cloud_provider=$CLOUD_PROVIDER" \
+      -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "server_name=$SERVER_NAME" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -auto-approve
@@ -55,7 +59,7 @@ function destroy_server {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
-      -var "cloud_provider=digitalocean" \
+      -var "cloud_provider=$CLOUD_PROVIDER" \
       -var "server_name=$SERVER_NAME" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
@@ -68,7 +72,7 @@ function destroy_all {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
-      -var "cloud_provider=digitalocean" \
+      -var "cloud_provider=$CLOUD_PROVIDER" \
       -var "server_name=$SERVER_NAME" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \

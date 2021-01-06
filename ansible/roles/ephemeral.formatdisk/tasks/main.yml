@@ -8,17 +8,10 @@
   # If formatted,
   # /dev/xvda1: SGI XFS filesystem data (blksz 4096, inosz 512, v2 dirs)
 
-- name: Format disk as ext4 if unformatted
-  when: "var_disk_format.stdout == device + ': data'"
-  community.general.parted:
-    device: "{{ device }}"
-    number: 1
-    state: present
-    fs_type: ext4
-
 - name: Format partition
+  when: "var_disk_format.stdout == device + ': data'"
   community.general.filesystem:
-    dev: "{{ device }}{% if 'nvme' not in device %}1{% else %}p1{% endif %}"
+    dev: "{{ device }}"
     fstype: ext4
     state: present
 
@@ -31,7 +24,7 @@
     group: minecraft
 - name: Mount persistent volume
   ansible.posix.mount:
-    src: "{{ device }}{% if 'nvme' not in device %}1{% else %}p1{% endif %}"
+    src: "{{ device }}"
     path: "{{ persistent_mount }}"
     state: mounted
     fstype: ext4
