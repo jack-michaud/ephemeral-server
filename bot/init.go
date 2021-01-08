@@ -56,6 +56,7 @@ func InitializeBot(ctx context.Context, discordSecret string) (*discordgo.Sessio
         state = InitializeConfigStateMachine()
       }
       configStateMachine.Set(GuildID, state.GetNextStateFromMessage(s, m, &config))
+      configMap.Set(GuildID, config)
     }
   })
 
