@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/go-redis/redis"
 )
 
 const ISSUE_LINK = "https://github.com/jack-michaud/ephemeral-server/issues/new"
@@ -90,7 +91,7 @@ func NewState(id string, action Action) State {
 }
 
 const DATA_SECURITY_NOTE = "(Note: All credentials are encrypted in transit and at rest)"
-func InitializeConfigStateMachine() State {
+func InitializeConfigStateMachine(conn *redis.Client) State {
   rootState := NewState("root", NilAction)
 
   configRoot := NewState(
@@ -470,7 +471,7 @@ func InitializeConfigStateMachine() State {
   saveConfig := NewState(
     "save-config",
     func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
-      err := config.SaveConfig()
+      err := config.SaveConfig(conn)
       if err != nil {
         s.ChannelMessageSend(
           m.ChannelID,

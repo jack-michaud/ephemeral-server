@@ -1,7 +1,12 @@
 package bot
 
 import (
+	"encoding/json"
+	"fmt"
 	"sync"
+	"time"
+
+	"github.com/go-redis/redis"
 )
 
 type AwsCreds struct {
@@ -15,6 +20,7 @@ type DigitalOceanCreds struct {
 type PrivateKey = []byte
 
 type Config struct {
+  ServerId string
   CloudProvider string
   DigitalOceanCreds *DigitalOceanCreds
   Region string
@@ -27,19 +33,41 @@ type Config struct {
   ServerType string
 }
 
-func GetConfigForServerId(Id string) (Config, error) {
-  return Config{
-    CloudProvider: "",
-    DigitalOceanCreds: &DigitalOceanCreds{
-      AccessKey: "123",
-    },
-    AwsCreds: nil,
-    PrivateKey: nil,
-  }, nil
+// Gets existing config from store or creates new config for server
+func GetConfigForServerId(Id string, conn *redis.Client) (*Config, error) {
+  ret := conn.Exists(Id)
+  if ret.Val() == 1 {
+    stringRet := conn.Get(Id)
+    b, err := stringRet.Bytes()
+    if err != nil {
+      return nil, fmt.Errorf("error getting config from store: %s", err)
+    }
+    config := &Config{}
+    err = json.Unmarshal(b, config)
+    if err != nil {
+      return nil, fmt.Errorf("error deserializing config: %s", err)
+    }
+    return config, nil
+  } else {
+    // Default config
+    return &Config{
+      ServerId: Id,
+    }, nil
+  }
 }
 
-func (c *Config) SaveConfig() error {
-  return nil
+func (c *Config) SaveConfig(conn *redis.Client) error {
+  data, err := json.Marshal(*c)
+  if err != nil {
+    return fmt.Errorf("could not serialize config: %s", err)
+  }
+  ret := conn.Set(c.ServerId, data, time.Duration(0))
+  retVal := ret.Val()
+  if retVal == "OK" {
+    return nil
+  } else {
+    return fmt.Errorf("could not save config: got error code from store: %s", retVal)
+  }
 }
 
 type ConfigMap struct {
