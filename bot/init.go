@@ -35,7 +35,7 @@ func InitializeBot(ctx context.Context, discordSecret string) (*discordgo.Sessio
 
   session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
     GuildID := m.GuildID
-    Guild, err := s.Guild(m.GuildID)
+    _, err := s.Guild(m.GuildID)
     if err != nil {
       log.Println("Could not get guild", GuildID, "from guildmap")
       return
@@ -50,7 +50,11 @@ func InitializeBot(ctx context.Context, discordSecret string) (*discordgo.Sessio
     }
 
     // Only execute state machine if message comes from a authorized user
-    if (m.Author.ID == Guild.OwnerID) {
+    // If managing Role Id is empty, anyone can execute the state machine. 
+    if (
+      config.ManagingRoleId == "" ||
+      contains(m.Member.Roles, config.ManagingRoleId)) {
+
       state, found := configStateMachine.Get(GuildID)
       if !found {
         state = InitializeConfigStateMachine()
