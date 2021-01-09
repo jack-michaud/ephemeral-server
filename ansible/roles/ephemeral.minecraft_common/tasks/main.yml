@@ -5,9 +5,9 @@
     update_cache: true
     pkg:
     - openjdk-8-jre-headless
-- name: Install vanilla latest
-  import_tasks: ./vanilla-latest.yml
-  when: server_type == 'vanilla-latest'
+- name: Install vanilla 1.16.4
+  import_tasks: ./vanilla-1.16.4.yml
+  when: server_type == 'vanilla-1.16.4'
 - name: Generate minecraft systemd service
   template:
     src: mc-server.service
@@ -19,4 +19,4 @@
   systemd:
     name: mc-server
     state: started
-    enabled: yes
+    enabled: no

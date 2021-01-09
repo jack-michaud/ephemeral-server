@@ -2,3 +2,5 @@ config
 
 .terraform
 terraform.tfstate*
+
+vendor
