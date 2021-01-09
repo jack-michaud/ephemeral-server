@@ -52,8 +52,9 @@ func InitializeBot(ctx context.Context, discordSecret string) (*discordgo.Sessio
     // Only execute state machine if message comes from a authorized user
     // If managing Role Id is empty, anyone can execute the state machine. 
     if (
-      config.ManagingRoleId == "" ||
-      contains(m.Member.Roles, config.ManagingRoleId)) {
+      m.Author.ID != s.State.User.ID &&
+      (config.ManagingRoleId == "" ||
+      contains(m.Member.Roles, config.ManagingRoleId))) {
 
       state, found := configStateMachine.Get(GuildID)
       if !found {

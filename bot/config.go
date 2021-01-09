@@ -152,6 +152,8 @@ func NewState(id string, action Action) State {
 
 const DATA_SECURITY_NOTE = "(Note: All credentials are encrypted in transit and at rest)"
 func InitializeConfigStateMachine() State {
+  rootState := NewState("root", NilAction)
+
   configRoot := NewState(
     "root-config-flow",
     func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
@@ -169,7 +171,7 @@ func InitializeConfigStateMachine() State {
         m.ChannelID,
         "Canceling configuration.",
       )
-      return nil, nil
+      return nil, &rootState
     },
   )
 
@@ -526,7 +528,6 @@ func InitializeConfigStateMachine() State {
     },
   )
 
-  rootState := NewState("root", NilAction)
   saveConfig := NewState(
     "save-config",
     func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
@@ -608,7 +609,7 @@ func InitializeConfigStateMachine() State {
 
   handleSetupManagingRole.AddState(`>no`, askSetupManagingRole)
   handleSetupManagingRole.AddState(`>cancel`, cancelStep)
-  handleSetupManagingRole.AddState(`>yes`, saveConfig)
+  handleSetupManagingRole.AddState(`>yes`, askServerType)
 
   askServerType.AddState(`>eph[emeral]* set-type (.+)`, handleServerType)
   askServerType.AddState(`>cancel`, cancelStep)
