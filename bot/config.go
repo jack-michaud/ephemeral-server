@@ -3,10 +3,12 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/jack-michaud/ephemeral-server/bot/crypt"
 )
 
 type AwsCreds struct {
@@ -33,6 +35,10 @@ type Config struct {
   ServerType string
 }
 
+func GetSecretKey() []byte {
+  return []byte(os.Getenv("SECRET_KEY"))
+}
+
 // Gets existing config from store or creates new config for server
 func GetConfigForServerId(Id string, conn *redis.Client) (*Config, error) {
   ret := conn.Exists(Id)
@@ -42,8 +48,15 @@ func GetConfigForServerId(Id string, conn *redis.Client) (*Config, error) {
     if err != nil {
       return nil, fmt.Errorf("error getting config from store: %s", err)
     }
+
+    svc := crypt.NewCryptService(GetSecretKey())
+    decryptedBytes, err := svc.Decrypt(b)
+    if err != nil {
+      return nil, fmt.Errorf("decryption error: %s", err)
+    }
+
     config := &Config{}
-    err = json.Unmarshal(b, config)
+    err = json.Unmarshal(decryptedBytes, config)
     if err != nil {
       return nil, fmt.Errorf("error deserializing config: %s", err)
     }
@@ -61,7 +74,12 @@ func (c *Config) SaveConfig(conn *redis.Client) error {
   if err != nil {
     return fmt.Errorf("could not serialize config: %s", err)
   }
-  ret := conn.Set(c.ServerId, data, time.Duration(0))
+  svc := crypt.NewCryptService(GetSecretKey())
+  encryptedBytes, err := svc.Encrypt(data)
+  if err != nil {
+    return fmt.Errorf("encryption error: %s", err)
+  }
+  ret := conn.Set(c.ServerId, encryptedBytes, time.Duration(0))
   retVal := ret.Val()
   if retVal == "OK" {
     return nil

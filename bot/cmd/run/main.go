@@ -20,6 +20,9 @@ func main()  {
   if (redisUrl == "") {
     log.Fatalln("REDIS_URL not found in env")
   }
+  if (os.Getenv("SECRET_KEY") == "") {
+    log.Fatalln("SECRET_KEY not found in env")
+  }
 
   // initialize redis
   options, err := redis.ParseURL(redisUrl)
