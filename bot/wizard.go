@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
@@ -8,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/go-redis/redis"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
 const ISSUE_LINK = "https://github.com/jack-michaud/ephemeral-server/issues/new"
@@ -91,7 +92,7 @@ func NewState(id string, action Action) State {
 }
 
 const DATA_SECURITY_NOTE = "(Note: All credentials are encrypted in transit and at rest)"
-func InitializeConfigStateMachine(conn *redis.Client) State {
+func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) State {
   rootState := NewState("root", NilAction)
 
   configRoot := NewState(
@@ -471,7 +472,7 @@ func InitializeConfigStateMachine(conn *redis.Client) State {
   saveConfig := NewState(
     "save-config",
     func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
-      err := config.SaveConfig(conn)
+      err := config.SaveConfig(kvConn)
       if err != nil {
         s.ChannelMessageSend(
           m.ChannelID,
@@ -502,11 +503,28 @@ func InitializeConfigStateMachine(conn *redis.Client) State {
     },
   )
 
+  ephemeralCtlState := NewState(
+    "ephemeral-ctl-entrypoint",
+    func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
+      actionString := args[1]
+      var action EphemeralAction = NO_OP
+      if actionString == "up" {
+        action = CREATE
+      }
+      if action != NO_OP {
+        RunEphemeral(ctx, action, config)
+      }
+      return nil, &rootState
+    },
+  )
+
   rootState.AddState(`^>eph[emeral]* config$`, configRoot)
   rootState.AddState(`^>eph[emeral]* set-type`, askServerType)
   rootState.AddState(`^>eph[emeral]* set-type (.+)`, handleServerType)
   rootState.AddState(`^>eph[emeral]* set-size`, askSize)
   rootState.AddState(`^>eph[emeral]* help$`, helpStep)
+
+  rootState.AddState(`^>eph[emeral]* (up|down)$`, ephemeralCtlState)
 
   configRoot.AddState(`>cancel`, cancelStep)
   configRoot.AddState(`>continue`, askCloudProviderStep)

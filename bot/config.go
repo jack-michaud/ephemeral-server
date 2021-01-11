@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/jack-michaud/ephemeral-server/bot/crypt"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
 type AwsCreds struct {
@@ -40,17 +39,15 @@ func GetSecretKey() []byte {
 }
 
 // Gets existing config from store or creates new config for server
-func GetConfigForServerId(Id string, conn *redis.Client) (*Config, error) {
-  ret := conn.Exists(Id)
-  if ret.Val() == 1 {
-    stringRet := conn.Get(Id)
-    b, err := stringRet.Bytes()
+func GetConfigForServerId(Id string, conn store.IKVStore) (*Config, error) {
+  rawConfig, err := conn.Get(fmt.Sprintf("configs/%s", Id))
+  if rawConfig != nil {
     if err != nil {
       return nil, fmt.Errorf("error getting config from store: %s", err)
     }
 
     svc := crypt.NewCryptService(GetSecretKey())
-    decryptedBytes, err := svc.Decrypt(b)
+    decryptedBytes, err := svc.Decrypt(rawConfig)
     if err != nil {
       return nil, fmt.Errorf("decryption error: %s", err)
     }
@@ -69,7 +66,7 @@ func GetConfigForServerId(Id string, conn *redis.Client) (*Config, error) {
   }
 }
 
-func (c *Config) SaveConfig(conn *redis.Client) error {
+func (c *Config) SaveConfig(conn store.IKVStore) error {
   data, err := json.Marshal(*c)
   if err != nil {
     return fmt.Errorf("could not serialize config: %s", err)
@@ -79,12 +76,11 @@ func (c *Config) SaveConfig(conn *redis.Client) error {
   if err != nil {
     return fmt.Errorf("encryption error: %s", err)
   }
-  ret := conn.Set(c.ServerId, encryptedBytes, time.Duration(0))
-  retVal := ret.Val()
-  if retVal == "OK" {
+  err = conn.Set(fmt.Sprintf("configs/%s", c.ServerId), encryptedBytes)
+  if err == nil {
     return nil
   } else {
-    return fmt.Errorf("could not save config: got error code from store: %s", retVal)
+    return fmt.Errorf("could not save config: got error code from store: %s", err)
   }
 }
 

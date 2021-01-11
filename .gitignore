@@ -4,3 +4,4 @@ config
 terraform.tfstate*
 
 vendor
+.cache

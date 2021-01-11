@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/go-redis/redis"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
 func SendError(s *discordgo.Session, channelId string, err string) {
@@ -15,17 +15,17 @@ func SendError(s *discordgo.Session, channelId string, err string) {
 
 type InitializeConfig struct {
   DiscordSecret string
-  RedisConn *redis.Client
+  KVConn store.IKVStore
 }
 
 func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*discordgo.Session, error) {
   discordSecret := initializeConfig.DiscordSecret
-  redisConn := initializeConfig.RedisConn
+  kvConn := initializeConfig.KVConn
   if discordSecret == "" {
     return nil, fmt.Errorf("Must provide discordSecret")
   }
-  if redisConn == nil {
-    return nil, fmt.Errorf("Must provide redisConn")
+  if kvConn == nil {
+    return nil, fmt.Errorf("Must provide kvConn")
   }
 
   session, err := discordgo.New("Bot " + discordSecret)
@@ -41,7 +41,7 @@ func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*dis
   session.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
     ID := g.ID
     log.Println("Got guild create event for guild ID:", ID, ". (", g.Guild.Name, ")")
-    config, err := GetConfigForServerId(ID, redisConn)
+    config, err := GetConfigForServerId(ID, kvConn)
     if err != nil {
       log.Println("Could not fetch config from store")
     }
@@ -73,7 +73,7 @@ func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*dis
 
       state, found := configStateMachine.Get(GuildID)
       if !found {
-        state = InitializeConfigStateMachine(redisConn)
+        state = InitializeConfigStateMachine(ctx, kvConn)
       }
       configStateMachine.Set(GuildID, state.GetNextStateFromMessage(s, m, &config))
       configMap.Set(GuildID, config)
