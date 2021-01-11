@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -24,11 +25,12 @@ const (
   ANSIBLE_PROVISION
 )
 
-func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config) {
-  //log.SetPrefix("[ephemeralctl] ")
+func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, textUpdateChannel chan string) {
   ServerSize := config.Size
   ServerName := fmt.Sprintf("discord-%s", config.ServerId)
   ServerType := config.ServerType
+  log.SetPrefix(fmt.Sprintf("[ephemeralctl:%s] ", ServerName))
+
   var Env []string = os.Environ()
   var Args []string = make([]string, 0)
   if (config.CloudProvider == "aws") {
@@ -50,9 +52,9 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config) {
   }
 
   Args = append(Args,
-    fmt.Sprintf("-t %s", ServerType),
-    fmt.Sprintf("-n %s", ServerName),
-    fmt.Sprintf("-s %s", ServerSize),
+    "-t", ServerType,
+    "-n", ServerName,
+    "-s", ServerSize,
   )
 
   var actionFlag string
@@ -72,24 +74,42 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config) {
 
   Args = append(Args, actionFlag)
 
-  cmd := exec.CommandContext(ctx, "/home/jack/Code/minecraft-server-bot/ephemeralctl.sh", Args...)
+  cmd := exec.CommandContext(ctx, "./ephemeralctl.sh", Args...)
   cmd.Env = Env
 
   log.Println("launch:", Args)
   log.Println("launch:", cmd.String())
-
-  log.Println("Starting eph command")
-  err := cmd.Start()
+  stdoutPipe, err := cmd.StdoutPipe()
   if err != nil {
-    log.Println("failed:", err)
+    log.Println("error: could not get stdoutpipe:", err)
   }
-  log.Println("waiting...")
+  stderrPipe, err := cmd.StderrPipe()
+  if err != nil {
+    log.Println("error: could not get stderrpipe:", err)
+  }
+
+  cmd.Start()
+  // Read output
+  go func() {
+    scanner := bufio.NewScanner(stdoutPipe)
+    for scanner.Scan() {
+      line := scanner.Text()
+      log.Println(line)
+    }
+  }()
+
+  // Read output
+  go func() {
+    scanner := bufio.NewScanner(stderrPipe)
+    for scanner.Scan() {
+      line := scanner.Text()
+      log.Println(line)
+    }
+  }()
+
+  // Wait for command to finish
   err = cmd.Wait()
-  log.Println("done waiting")
-  output, err := cmd.CombinedOutput()
   if err != nil {
     log.Println("failed:", err)
-  } else {
-    log.Println(string(output))
   }
 }

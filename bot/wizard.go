@@ -512,7 +512,17 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
         action = CREATE
       }
       if action != NO_OP {
-        RunEphemeral(ctx, action, config)
+        messageChannel := make(chan string, 1)
+        // Send messages as they come in from RunEphemeral
+        go func () {
+          for message := range messageChannel {
+            s.ChannelMessageSend(
+              m.ChannelID,
+              message,
+            )
+          }
+        }()
+        RunEphemeral(ctx, action, config, messageChannel)
       }
       return nil, &rootState
     },

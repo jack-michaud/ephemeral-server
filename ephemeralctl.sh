@@ -34,6 +34,7 @@ function generate_keypair {
 }
 
 function initialize {
+  cd $base_dir
   src_terraform_dir=$base_dir/terraform
   config_dir=$base_dir/.cache/config-$SERVER_NAME
   ansible_dir=$base_dir/ansible
@@ -114,7 +115,13 @@ function ansible_install {
   PRIVATE_KEY_FILE=$(generate_keypair)
   echo "minecraft ansible_host=${IP} ansible_user=minecraft ansible_port=22 ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}" \
     > $config_dir/ansible_inventory
-  ansible-playbook -i $config_dir/ansible_inventory -e server_type=$SERVER_TYPE -e persistent_device=$DEVICE $ansible_dir/main.yml
+
+  ANSIBLE_HOST_KEY_CHECKING=False \
+    ANSIBLE_SSH_RETRIES=5 \
+    ansible-playbook -i $config_dir/ansible_inventory \
+    -e server_type=$SERVER_TYPE \
+    -e persistent_device=$DEVICE \
+    $ansible_dir/main.yml
 }
 
 
@@ -160,8 +167,7 @@ case $ACTION in
     exit 0
     ;;
   'create')
-    build_env && apply_terraform && ansible_install
-    exit 0
+    (build_env && apply_terraform && ansible_install && exit 0) || exit 1
     ;;
   'get_ip')
     build_env && get_ip
@@ -176,5 +182,3 @@ case $ACTION in
     exit 1
     ;;
 esac
-
-echo 'No option specified'
