@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var SERVER_TYPES = []string {
@@ -58,23 +59,28 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
   )
 
   var actionFlag string
+  var actionString string
   switch action {
   case NO_OP:
   case DESTROY_VPC:
+    actionString = "Destroying server"
     actionFlag = "-d"
   case DESTROY_ALL:
+    actionString = "Destroying server and persistent device"
     actionFlag = "-D"
   case CREATE:
+    actionString = "Starting to create server"
     actionFlag = "-c"
   case GET_IP:
+    actionString = "Getting IP"
     actionFlag = "-i"
   case ANSIBLE_PROVISION:
+    actionString = "Reinstalling software..."
     actionFlag = "-I"
   }
 
-  Args = append(Args, actionFlag)
-
-  cmd := exec.CommandContext(ctx, "./ephemeralctl.sh", Args...)
+  EPHHEMERAL_BIN := "./ephemeralctl.sh"
+  cmd := exec.CommandContext(ctx, EPHHEMERAL_BIN, append(Args, actionFlag)...)
   cmd.Env = Env
 
   log.Println("launch:", Args)
@@ -95,6 +101,40 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     for scanner.Scan() {
       line := scanner.Text()
       log.Println(line)
+      if action == CREATE {
+        if strings.Contains(line, "Successfully applied terraform") {
+          textUpdateChannel <- fmt.Sprintf("Successfully created VPS! Starting %s server (May take a couple minutes.)", ServerType)
+        }
+        if strings.Contains(line, "Failed to apply terraform") {
+          log.Println("ERROR FAILED TO CREATE VPS")
+          textUpdateChannel <- "Failed to create VPS"
+        }
+        if strings.Contains(line, "Successfully applied ansible") {
+          ip, err := exec.Command(EPHHEMERAL_BIN, append(Args, "-i")...).Output()
+          if err != nil {
+            log.Println("Tried to get IP, but failed:", err)
+            textUpdateChannel <- fmt.Sprintf("Successfully created %s server!", ServerType)
+          } else {
+            textUpdateChannel <- fmt.Sprintf("Successfully created %s server! IP: %s:25565", ServerType, ip)
+          }
+        }
+        if strings.Contains(line, "Failed to apply ansible") {
+          log.Println("ERROR FAILED TO CREATE VPS")
+          textUpdateChannel <- "Failed to create VPS"
+        }
+      }
+      if action == DESTROY_VPC {
+        if strings.Contains(line, "Destroy complete!") {
+          textUpdateChannel <- fmt.Sprintf("Shut down server.")
+        }
+      }
+      if action == DESTROY_ALL {
+        if strings.Contains(line, "Destroy complete!") {
+          textUpdateChannel <- fmt.Sprintf(
+            "Shut down server and deleted persistent data volume.",
+          )
+        }
+      }
     }
   }()
 
@@ -108,8 +148,13 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
   }()
 
   // Wait for command to finish
+  textUpdateChannel <- fmt.Sprintf(
+    "%s...(Please be patient, it may take a couple minutes!)",
+    actionString,
+  )
   err = cmd.Wait()
   if err != nil {
+    textUpdateChannel <- "Failed :/"
     log.Println("failed:", err)
   }
 }

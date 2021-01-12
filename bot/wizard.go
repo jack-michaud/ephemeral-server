@@ -511,6 +511,13 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
       if actionString == "up" {
         action = CREATE
       }
+      if actionString == "wipe" {
+        action = DESTROY_ALL
+      }
+      if actionString == "down" {
+        action = DESTROY_VPC
+      }
+
       if action != NO_OP {
         messageChannel := make(chan string, 1)
         // Send messages as they come in from RunEphemeral
@@ -534,7 +541,7 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
   rootState.AddState(`^>eph[emeral]* set-size`, askSize)
   rootState.AddState(`^>eph[emeral]* help$`, helpStep)
 
-  rootState.AddState(`^>eph[emeral]* (up|down)$`, ephemeralCtlState)
+  rootState.AddState(`^>eph[emeral]* (up|down|wipe)$`, ephemeralCtlState)
 
   configRoot.AddState(`>cancel`, cancelStep)
   configRoot.AddState(`>continue`, askCloudProviderStep)

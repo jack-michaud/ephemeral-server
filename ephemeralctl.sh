@@ -41,7 +41,7 @@ function initialize {
   key_dir=$config_dir/keys
   terraform_dir=$base_dir/.cache/terraform-$SERVER_NAME
   rsync -r $src_terraform_dir/* $terraform_dir
-  pushd $terraform_dir
+  pushd $terraform_dir > /dev/null
   cat <<EOF > terraform.tf
 terraform {
   backend "consul" {
@@ -52,13 +52,14 @@ terraform {
 }
 EOF
   [[ -d .terraform ]] || terraform init
-  popd
+  popd > /dev/null
   generate_keypair > /dev/null
 }
 
 function apply_terraform {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
+
     terraform \
       apply \
       -var "cloud_provider=$CLOUD_PROVIDER" \
@@ -67,7 +68,11 @@ function apply_terraform {
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -var "server_name=$SERVER_NAME" \
       -auto-approve
+    status=$?
+
     popd > /dev/null
+    test $status && echo 'Successfully applied terraform' || echo 'Failed to apply terraform'
+    return $status
 }
 
 function destroy_server {
@@ -122,6 +127,10 @@ function ansible_install {
     -e server_type=$SERVER_TYPE \
     -e persistent_device=$DEVICE \
     $ansible_dir/main.yml
+  status=$?
+
+  test $status && echo 'Successfully applied ansible' || echo 'Failed to apply ansible'
+  return $status
 }
 
 
