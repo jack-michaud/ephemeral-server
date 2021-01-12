@@ -5,3 +5,5 @@ terraform.tfstate*
 
 vendor
 .cache
+
+build
