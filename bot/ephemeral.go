@@ -38,7 +38,7 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     Creds := config.AwsCreds
     Env = append(
       Env,
-      "CLOUD_PROVDER=aws",
+      "CLOUD_PROVIDER=aws",
       fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", Creds.SecretAccessKey),
       fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", Creds.AccessKeyId),
       fmt.Sprintf("AWS_DEFAULT_REGION=%s", config.Region),
@@ -47,7 +47,7 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     Creds := config.DigitalOceanCreds
     Env = append(
       Env,
-      "CLOUD_PROVDER=digitalocean",
+      "CLOUD_PROVIDER=digitalocean",
       fmt.Sprintf("DIGITAL_OCEAN_TOKEN=%s", Creds.AccessKey),
     )
   }
