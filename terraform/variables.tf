@@ -6,6 +6,10 @@ variable "cloud_provider" {
   description = "The cloud provider used. Currently supports AWS and Digital ocean."
 }
 
+variable "instance_size" {
+  description = "VPC size"
+}
+
 variable "server_name" {
   description = "The unique server ID (I put it as guild name)"
 }

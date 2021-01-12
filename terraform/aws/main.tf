@@ -25,7 +25,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_security_group" "minecraft_security_group" {
   // We use a host based firewall controlled in ansible
-  name = "allow all"
+  name = "allow-all-${var.server_name}"
   description = "Allow all traffic inbound and outbound (use Host based firewall!)"
 
   ingress {

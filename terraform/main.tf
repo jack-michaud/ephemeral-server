@@ -18,7 +18,7 @@ module "digitalocean" {
   server_name = var.server_name
   user_data = local.user_data
   
-  instance_size = "s-2vcpu-4gb" 
+  instance_size = var.instance_size
   region = "nyc1"
 }
 
@@ -28,6 +28,6 @@ module "aws" {
   server_name = var.server_name
   user_data = local.user_data
   
-  instance_size = "t3.large" 
+  instance_size = var.instance_size
   region = "us-east-1a"
 }

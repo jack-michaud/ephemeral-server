@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/signal"
 
+	consul "github.com/hashicorp/consul/api"
 	"github.com/jack-michaud/ephemeral-server/bot"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
 func main()  {
@@ -15,8 +17,31 @@ func main()  {
   if (discordSecret == "") {
     log.Fatalln("DISCORD_CLIENT_SECRET not found in env")
   }
+  //consulAddress := os.Getenv("CONSUL_ADDRESS")
+  //if (consulAddress == "") {
+  //  log.Fatalln("CONSUL_ADDRESS not found in env")
+  //}
+  if (os.Getenv("SECRET_KEY") == "") {
+    log.Fatalln("SECRET_KEY not found in env")
+  }
 
-  session, err := bot.InitializeBot(ctx, discordSecret)
+  // initialize kv store (consul)
+  var kvConn store.IKVStore
+  kvConn, err := store.NewKVConsul(consul.DefaultConfig())
+  if err != nil {
+    log.Fatalln("could not initialize consul:", err)
+  }
+  err = kvConn.TestLive()
+  if err != nil {
+    log.Fatalln("could not initialize consul:", err)
+  }
+
+
+  session, err := bot.InitializeBot(ctx, bot.InitializeConfig{
+    DiscordSecret: discordSecret,
+    KVConn: kvConn,
+  })
+
   if err != nil {
     log.Fatalln("error initializing bot:", err)
   }

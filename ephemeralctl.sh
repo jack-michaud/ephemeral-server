@@ -2,10 +2,6 @@
 # Author: @jack-michaud
 
 base_dir=$(dirname $0)
-terraform_dir=$base_dir/terraform
-config_dir=$base_dir/config
-ansible_dir=$base_dir/ansible
-key_dir=$config_dir/keys
 
 function build_env {
     source .env
@@ -24,12 +20,12 @@ function build_env {
 }
 
 function generate_keypair {
-  keyname=minecraft
+  keyname=minecraft-$SERVER_NAME
   [ -d $key_dir ] || mkdir -p $key_dir
 
   # Generate ssh keys if the keys do not exist
   [ ! -f $key_dir/$keyname.pub ] || [ ! -f $key_dir/$keyname ] && (
-    rm $key_dir/$keyname*
+    rm $key_dir/$keyname* || echo ''
     ssh-keygen -q -N '' -f $key_dir/$keyname 
     #ssh-keygen -b 521 -t ecdsa -N '' -f $key_dir/$keyname 
   )
@@ -38,21 +34,45 @@ function generate_keypair {
 }
 
 function initialize {
-  [[ -d $terraform_dir/.terraform ]] || terraform -chdir=$terraform_dir init
+  cd $base_dir
+  src_terraform_dir=$base_dir/terraform
+  config_dir=$base_dir/.cache/config-$SERVER_NAME
+  ansible_dir=$base_dir/ansible
+  key_dir=$config_dir/keys
+  terraform_dir=$base_dir/.cache/terraform-$SERVER_NAME
+  rsync -r $src_terraform_dir/* $terraform_dir
+  pushd $terraform_dir > /dev/null
+  cat <<EOF > terraform.tf
+terraform {
+  backend "consul" {
+    address = "127.0.0.1:8500"
+    scheme  = "http"
+    path    = "tfstate/${SERVER_NAME}-server"
+  }
+}
+EOF
+  [[ -d .terraform ]] || terraform init
+  popd > /dev/null
   generate_keypair > /dev/null
 }
 
 function apply_terraform {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
+
     terraform \
       apply \
       -var "cloud_provider=$CLOUD_PROVIDER" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
-      -var "server_name=$SERVER_NAME" \
+      -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
+      -var "server_name=$SERVER_NAME" \
       -auto-approve
+    status=$?
+
     popd > /dev/null
+    test $status && echo 'Successfully applied terraform' || echo 'Failed to apply terraform'
+    return $status
 }
 
 function destroy_server {
@@ -60,9 +80,10 @@ function destroy_server {
     pushd $terraform_dir > /dev/null
     terraform destroy \
       -var "cloud_provider=$CLOUD_PROVIDER" \
-      -var "server_name=$SERVER_NAME" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
+      -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
+      -var "server_name=$SERVER_NAME" \
       -auto-approve \
       -target='module.digitalocean[0].digitalocean_droplet.minecraft' \
       -target='module.aws[0].aws_instance.minecraft'
@@ -73,9 +94,10 @@ function destroy_all {
     pushd $terraform_dir > /dev/null
     terraform destroy \
       -var "cloud_provider=$CLOUD_PROVIDER" \
-      -var "server_name=$SERVER_NAME" \
       -var "do_token=$DIGITAL_OCEAN_TOKEN" \
+      -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
+      -var "server_name=$SERVER_NAME" \
       -auto-approve
     popd > /dev/null
 }
@@ -98,12 +120,21 @@ function ansible_install {
   PRIVATE_KEY_FILE=$(generate_keypair)
   echo "minecraft ansible_host=${IP} ansible_user=minecraft ansible_port=22 ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}" \
     > $config_dir/ansible_inventory
-  ansible-playbook -i $config_dir/ansible_inventory -e server_type=$SERVER_TYPE -e persistent_device=$DEVICE $ansible_dir/main.yml
+
+  ANSIBLE_HOST_KEY_CHECKING=False \
+    ANSIBLE_SSH_RETRIES=5 \
+    ansible-playbook -i $config_dir/ansible_inventory \
+    -e server_type=$SERVER_TYPE \
+    -e persistent_device=$DEVICE \
+    $ansible_dir/main.yml
+  status=$?
+
+  test $status && echo 'Successfully applied ansible' || echo 'Failed to apply ansible'
+  return $status
 }
 
-initialize
 
-while getopts "dDciIn:t:" OPTION; do
+while getopts "dDciIs:t:n:" OPTION; do
   case $OPTION in
     D) ACTION='destroy_all' ;;
     d) ACTION='destroy' ;;
@@ -112,6 +143,7 @@ while getopts "dDciIn:t:" OPTION; do
     I) ACTION='ansible_install' ;;
     n) SERVER_NAME=$OPTARG ;;
     t) SERVER_TYPE=$OPTARG ;;
+    s) INSTANCE_SIZE=$OPTARG ;;
   esac
 done
 
@@ -120,10 +152,19 @@ if [ -z $SERVER_NAME ]; then
   exit 1
 fi
 
-if [ -z $SERVER_TYPE ]; then
-  SERVER_TYPE=texkit3
+if [ -z $INSTANCE_SIZE ]; then
+  echo 'Must supply -s <instance size> option.'
+  exit 1
 fi
 
+
+if [ -z $SERVER_TYPE ]; then
+  echo 'Must supply -t server_type option.'
+  exit 1
+fi
+
+build_env
+initialize
 
 case $ACTION in
   'destroy_all')
@@ -135,8 +176,7 @@ case $ACTION in
     exit 0
     ;;
   'create')
-    build_env && apply_terraform && ansible_install
-    exit 0
+    (build_env && apply_terraform && ansible_install && exit 0) || exit 1
     ;;
   'get_ip')
     build_env && get_ip
@@ -151,5 +191,3 @@ case $ACTION in
     exit 1
     ;;
 esac
-
-echo 'No option specified'

@@ -1,5 +1,8 @@
 ---
 # tasks file for ephemeral.minecraft_common
+- name: Get total memory
+  shell: free --mega -w | grep Mem | awk '{ print $2 }'
+  register: var_total_memory
 - name: Install JRE
   apt:
     update_cache: true
@@ -8,6 +11,10 @@
 - name: Install vanilla 1.16.4
   import_tasks: ./vanilla-1.16.4.yml
   when: server_type == 'vanilla-1.16.4'
+- name: debug output
+  debug:
+    msg: "{{ launch_command }}"
+
 - name: Generate minecraft systemd service
   template:
     src: mc-server.service
