@@ -1,2 +1,2 @@
 working_dir: "{{ persistent_mount }}/vanilla-1.16.4"
-launch_command: "/usr/bin/java -Xmx1024M -Xms1024M -jar {{ working_dir }}/minecraft_server.1.16.4.jar nogui"
+launch_command: "/usr/bin/java -Xmx{{ ((var_total_memory.stdout | int) / 2) | int }}M -Xms{{ ((var_total_memory.stdout | int) / 2) | int }}M -jar {{ working_dir }}/minecraft_server.1.16.4.jar nogui"
