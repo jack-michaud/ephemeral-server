@@ -13,7 +13,7 @@ resource "digitalocean_droplet" "minecraft" {
   region = var.region
   size   = var.instance_size
 
-  user_data = var.user_data
+  user_data = local.user_data
 
 }
 
