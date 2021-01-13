@@ -6,7 +6,7 @@ on:
     - published
   push:
     branches:
-    - develop
+    - deployment
 
 jobs:
   docker-build:
