@@ -15,6 +15,9 @@ jobs:
       docker_build_tag: 
     steps: 
     - uses: actions/checkout@v2
+    - name: create tag name
+      id: tag
+      run: echo "::set-output name=tag_name::$(echo '${{ github.ref }}' | awk -F'/' '{ print $3 }')"
     - name: Set up docker builder
       id: buildx
       uses: docker/setup-buildx-action@v1
@@ -34,5 +37,5 @@ jobs:
         push: true
         tags: |
           ephemeralserver/ephbot:latest
-          ephemeralserver/ephbot:${{ github.ref }}
+          ephemeralserver/ephbot:${{ env.TAG_NAME }}
 
