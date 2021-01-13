@@ -77,8 +77,7 @@ function apply_terraform {
 
     terraform \
       apply \
-      -var "cloud_provider=$CLOUD_PROVIDER" \
-      -var "do_token=$DIGITAL_OCEAN_TOKEN" \
+      -var "region=$REGION" \
       -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -var "server_name=$SERVER_NAME" \
@@ -94,8 +93,7 @@ function destroy_server {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
-      -var "cloud_provider=$CLOUD_PROVIDER" \
-      -var "do_token=$DIGITAL_OCEAN_TOKEN" \
+      -var "region=$REGION" \
       -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -var "server_name=$SERVER_NAME" \
@@ -108,8 +106,7 @@ function destroy_all {
     PUBLIC_KEY_PATH=$(generate_keypair).pub
     pushd $terraform_dir > /dev/null
     terraform destroy \
-      -var "cloud_provider=$CLOUD_PROVIDER" \
-      -var "do_token=$DIGITAL_OCEAN_TOKEN" \
+      -var "region=$REGION" \
       -var "instance_size=$INSTANCE_SIZE" \
       -var "public_key_path=$PUBLIC_KEY_PATH" \
       -var "server_name=$SERVER_NAME" \
