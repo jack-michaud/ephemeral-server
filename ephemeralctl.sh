@@ -1,16 +1,12 @@
 #!/bin/bash
 # Author: @jack-michaud
 
-base_dir=$(dirname $0)
+base_dir=$(realpath $(dirname $0))
 
 function build_env {
     source .env
     if [ -z $CLOUD_PROVIDER ]; then
       echo 'Error: must provide CLOUD_PROVIDER in environment variables (or in .env)'
-      exit 1
-    fi
-    if [ -z $DIGITAL_OCEAN_TOKEN ]; then
-      echo 'Error: must provide DIGITAL_OCEAN_TOKEN in environment variables (or in .env)'
       exit 1
     fi
     if [ -z $DIGITAL_OCEAN_TOKEN ]; then
@@ -35,11 +31,30 @@ function generate_keypair {
 
 function initialize {
   cd $base_dir
-  src_terraform_dir=$base_dir/terraform
+  if [[ "$CLOUD_PROVIDER" == "digitalocean" ]]; then
+    if [ -z $DIGITAL_OCEAN_TOKEN ]; then
+      echo 'Error: must provide DIGITAL_OCEAN_TOKEN in environment variables (or in .env)'
+      exit 1
+    fi
+    src_terraform_dir=$base_dir/terraform/digitalocean
+  fi
+  if [[ "$CLOUD_PROVIDER" == "aws" ]]; then
+    if [[ -z $AWS_ACCESS_KEY_ID ]]; then
+      echo 'Error: must provide AWS_ACCESS_KEY_ID'
+      exit 1
+    fi
+    if [[ -z $AWS_SECRET_ACCESS_KEY ]]; then
+      echo 'Error: must provide AWS_SECRET_ACCESS_KEY'
+      exit 1
+    fi
+    src_terraform_dir=$base_dir/terraform/aws
+  fi
   config_dir=$base_dir/.cache/config-$SERVER_NAME
   ansible_dir=$base_dir/ansible
   key_dir=$config_dir/keys
   terraform_dir=$base_dir/.cache/terraform-$SERVER_NAME
+  rm -r $terraform_dir
+  mkdir -p $terraform_dir
   rsync -r $src_terraform_dir/* $terraform_dir
   pushd $terraform_dir > /dev/null
   cat <<EOF > terraform.tf
@@ -51,7 +66,7 @@ terraform {
   }
 }
 EOF
-  [[ -d .terraform ]] || terraform init
+  terraform init
   popd > /dev/null
   generate_keypair > /dev/null
 }

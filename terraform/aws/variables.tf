@@ -1,8 +1,4 @@
 
-variable "user_data" {
-  description = "cloudinit user data"
-}
-
 variable "server_name" {
   description = "human readable name of server"
 }
@@ -14,3 +10,8 @@ variable "instance_size" {
 variable "region" {
   description = "Availability zone (e.g. us-east-1a)"
 }
+
+variable "public_key_path" {
+  description = "The absolute path of the public key used to log into the server"
+}
+
