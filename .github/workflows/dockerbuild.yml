@@ -37,5 +37,5 @@ jobs:
         push: true
         tags: |
           ephemeralserver/ephbot:latest
-          ephemeralserver/ephbot:${{ env.TAG_NAME }}
+          ephemeralserver/ephbot:${{ steps.tag.outputs.tag_name }}
 
