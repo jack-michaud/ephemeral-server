@@ -146,7 +146,7 @@ function ansible_install {
 }
 
 
-while getopts "dDciIs:t:n:" OPTION; do
+while getopts "dDciIs:t:n:r:" OPTION; do
   case $OPTION in
     D) ACTION='destroy_all' ;;
     d) ACTION='destroy' ;;
@@ -156,6 +156,7 @@ while getopts "dDciIs:t:n:" OPTION; do
     n) SERVER_NAME=$OPTARG ;;
     t) SERVER_TYPE=$OPTARG ;;
     s) INSTANCE_SIZE=$OPTARG ;;
+    r) REGION=$OPTARG ;;
   esac
 done
 
