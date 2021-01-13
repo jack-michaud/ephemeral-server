@@ -31,4 +31,5 @@ jobs:
         registry: docker.pkg.github.com
         repository: jack-michaud/ephemeral-server/ephemeralbot
         tag_with_ref: true
+        push: true
 
