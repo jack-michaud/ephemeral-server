@@ -9,10 +9,6 @@ function build_env {
       echo 'Error: must provide CLOUD_PROVIDER in environment variables (or in .env)'
       exit 1
     fi
-    if [ -z $DIGITAL_OCEAN_TOKEN ]; then
-      echo 'Error: must provide DIGITAL_OCEAN_TOKEN in environment variables (or in .env)'
-      exit 1
-    fi
 }
 
 function generate_keypair {
@@ -32,8 +28,8 @@ function generate_keypair {
 function initialize {
   cd $base_dir
   if [[ "$CLOUD_PROVIDER" == "digitalocean" ]]; then
-    if [ -z $DIGITAL_OCEAN_TOKEN ]; then
-      echo 'Error: must provide DIGITAL_OCEAN_TOKEN in environment variables (or in .env)'
+    if [ -z $DIGITALOCEAN_TOKEN ]; then
+      echo 'Error: must provide DIGITALOCEAN_TOKEN in environment variables (or in .env)'
       exit 1
     fi
     src_terraform_dir=$base_dir/terraform/digitalocean
