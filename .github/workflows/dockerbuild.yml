@@ -30,6 +30,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: docker.pkg.github.com
         repository: jack-michaud/ephemeral-server/ephemeralbot
-        tag_with_ref: true
         push: true
+        tags: |
+          ephemeralserver/ephbot:latest
+          ephemeralserver/ephbot:${{ github.ref }}
 
