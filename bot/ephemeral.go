@@ -30,6 +30,7 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
   ServerSize := config.Size
   ServerName := fmt.Sprintf("discord-%s", config.ServerId)
   ServerType := config.ServerType
+  Region := config.Region
   log.SetPrefix(fmt.Sprintf("[ephemeralctl:%s] ", ServerName))
 
   var Env []string = os.Environ()
@@ -48,7 +49,7 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     Env = append(
       Env,
       "CLOUD_PROVIDER=digitalocean",
-      fmt.Sprintf("DIGITAL_OCEAN_TOKEN=%s", Creds.AccessKey),
+      fmt.Sprintf("DIGITALOCEAN_TOKEN=%s", Creds.AccessKey),
     )
   }
 
@@ -56,6 +57,7 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     "-t", ServerType,
     "-n", ServerName,
     "-s", ServerSize,
+    "-r", Region,
   )
 
   var actionFlag string

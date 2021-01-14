@@ -53,7 +53,7 @@ resource "aws_instance" "minecraft" {
   availability_zone = var.region
   instance_type   = var.instance_size
 
-  user_data = var.user_data
+  user_data = local.user_data
 
   security_groups = [
     aws_security_group.minecraft_security_group.name
