@@ -1,4 +1,5 @@
 FROM golang:1.15.6
+LABEL org.opencontainers.image.source=https://github.com/jack-michaud/ephemeral-server
 
 ARG TARGETPLATFORM
 

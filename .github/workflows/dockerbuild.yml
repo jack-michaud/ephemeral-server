@@ -53,6 +53,6 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: |
-          ghcr.io/jack-michaud/ephemeral-server:latest
-          ghcr.io/jack-michaud/ephemeral-server:${{ steps.tag.outputs.tag_name }}
+          ghcr.io/jack-michaud/ephemeral-server/ephemeralbot:latest
+          ghcr.io/jack-michaud/ephemeral-server/ephemeralbot:${{ steps.tag.outputs.tag_name }}
 
