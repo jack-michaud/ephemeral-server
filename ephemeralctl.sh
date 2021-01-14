@@ -112,7 +112,7 @@ function destroy_all {
 
 function get_ip {
     pushd $terraform_dir > /dev/null
-    terraform output | grep 'ip' | awk '{ print $3 }'
+    terraform output | grep 'ip' | awk '{ print $3 }' | tr -d '"'
     popd > /dev/null
 }
 
@@ -173,26 +173,26 @@ if [ -z $SERVER_TYPE ]; then
 fi
 
 build_env
-initialize
+initialize > /dev/null
 
 case $ACTION in
   'destroy_all')
-    build_env && destroy_all
+    destroy_all
     exit 0
     ;;
   'destroy')
-    build_env && destroy_server
+    destroy_server
     exit 0
     ;;
   'create')
-    (build_env && apply_terraform && ansible_install && exit 0) || exit 1
+    (apply_terraform && ansible_install && exit 0) || exit 1
     ;;
   'get_ip')
-    build_env && get_ip
+    get_ip
     exit 0
     ;;
   'ansible_install')
-    build_env && ansible_install
+    ansible_install
     exit 0
     ;;
   *)

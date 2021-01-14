@@ -1,0 +1,29 @@
+- name: Include skyfactory-4 variables
+  include_vars:
+    file: ../vars/skyfactory-4.yml
+- name: Make skyfactory-4 folder
+  file: 
+    path: "{{ working_dir }}"
+    state: directory
+    mode: '0755'
+    owner: minecraft
+    group: minecraft
+- name: Download & unzip SkyFactory 4.2.2 Server
+  ansible.builtin.unarchive:
+    src: "https://media.forgecdn.net/files/3012/800/SkyFactory-4_Server_4.2.2.zip"
+    dest: "{{ working_dir }}"
+    remote_src: yes
+    group: minecraft
+    owner: minecraft
+    mode: '0755'
+- name: Check forge location
+  stat:
+    path: "{{ working_dir }}/forge-1.12.2-14.23.5.2854.jar"
+  register: var_forge_location
+- name: Install forge
+  shell: "bash ./Install.sh"
+  args:
+    chdir: "{{ working_dir }}"
+  when: 'not var_forge_location.stat.exists'
+- name: Agree to EULA
+  shell: "echo 'eula=true' > {{ working_dir }}/eula.txt"

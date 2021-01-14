@@ -1,0 +1,2 @@
+working_dir: "{{ persistent_mount }}/skyfactory-4"
+launch_command: "/usr/bin/java -Xmx{{ ((var_total_memory.stdout | int) / 2) | int }}M -Xms{{ ((var_total_memory.stdout | int) / 2) | int }}M -jar {{ working_dir }}/forge-1.12.2-14.23.5.2854.jar nogui"
