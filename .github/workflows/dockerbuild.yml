@@ -47,14 +47,12 @@ jobs:
         platforms: linux/arm/v7
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        registry: docker.pkg.github.com
+        registry: ghcr.io
         repository: jack-michaud/ephemeral-server/ephemeralbot
         push: true
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: |
-          jack-michaud/ephemeral-server:latest
-          jack-michaud/ephemeral-server:${{ steps.tag.outputs.tag_name }}
           ghcr.io/jack-michaud/ephemeral-server:latest
           ghcr.io/jack-michaud/ephemeral-server:${{ steps.tag.outputs.tag_name }}
 
