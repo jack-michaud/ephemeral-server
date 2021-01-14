@@ -4,9 +4,6 @@ on:
   release:
     types:
     - published
-  push:
-    branches:
-    - deployment
 
 jobs:
   docker-build:
@@ -43,8 +40,7 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        #platforms: linux/386,linux/amd64,linux/arm/v7,linux/arm64
-        platforms: linux/arm/v7
+        platforms: linux/amd64,linux/arm/v7
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: ghcr.io
