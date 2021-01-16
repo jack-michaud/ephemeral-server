@@ -1,0 +1,2 @@
+working_dir: "{{ persistent_mount }}/ftb-revelation-3.4.0"
+launch_command: "/usr/bin/java -Xmx{{ ((var_total_memory.stdout | int) / 2) | int }}M -Xms{{ ((var_total_memory.stdout | int) / 2) | int }}M -jar {{ working_dir }}/forge-1.12.2-14.23.5.2846-universal.jar nogui"
