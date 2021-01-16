@@ -3,7 +3,6 @@ package bot
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
