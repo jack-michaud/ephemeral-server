@@ -20,7 +20,7 @@
     path: "{{ working_dir }}/forge-1.12.2-14.23.5.2846-universal.jar"
   register: var_forge_location
 - name: Run modpack install
-  shell: "./install 35"
+  shell: "./install 35 && chown -R minecraft:minecraft ."
   args:
     chdir: "{{ working_dir }}"
   when: 'not var_forge_location.stat.exists'
