@@ -13,15 +13,6 @@ function build_env {
 
 function generate_keypair {
   keyname=minecraft-$SERVER_NAME
-  [ -d $key_dir ] || mkdir -p $key_dir
-
-  # Generate ssh keys if the keys do not exist
-  [ ! -f $key_dir/$keyname.pub ] || [ ! -f $key_dir/$keyname ] && (
-    rm $key_dir/$keyname* || echo ''
-    ssh-keygen -q -N '' -f $key_dir/$keyname 
-    #ssh-keygen -b 521 -t ecdsa -N '' -f $key_dir/$keyname 
-  )
-
   echo $(realpath $key_dir/$keyname)
 }
 
@@ -95,6 +86,8 @@ function destroy_server {
       -var "server_name=$SERVER_NAME" \
       -auto-approve \
       -target='module.digitalocean[0].digitalocean_droplet.minecraft' \
+      -target='digitalocean_droplet.minecraft' \
+      -target='aws_instance.minecraft' \
       -target='module.aws[0].aws_instance.minecraft'
     popd > /dev/null
 }

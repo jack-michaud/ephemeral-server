@@ -35,17 +35,11 @@ func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*dis
 
   session.UserAgent = "EphemeralServer (https://github.com/jack-michaud/ephemeral-server)"
 
-  configMap := NewConfigMap()
   configStateMachine := NewConfigStateMachine()
 
   session.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
     ID := g.ID
     log.Println("Got guild create event for guild ID:", ID, ". (", g.Guild.Name, ")")
-    config, err := GetConfigForServerId(ID, kvConn)
-    if err != nil {
-      log.Println("Could not fetch config from store")
-    }
-    configMap.Set(ID, *config)
   })
 
   session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -55,12 +49,12 @@ func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*dis
       log.Println("Could not get guild", GuildID, "from guildmap")
       return
     }
-    config, exists := configMap.Get(GuildID)
-    if !exists {
+    config, err := GetConfigForServerId(GuildID, kvConn)
+    if err != nil {
       SendError(
         s,
         m.ChannelID,
-        "Could not find config, initialized or not. This could be an issue with the bot.",
+        fmt.Sprintf("Could not get config: %s", err),
       )
     }
 
@@ -75,8 +69,8 @@ func InitializeBot(ctx context.Context, initializeConfig InitializeConfig) (*dis
       if !found {
         state = InitializeConfigStateMachine(ctx, kvConn)
       }
-      configStateMachine.Set(GuildID, state.GetNextStateFromMessage(s, m, &config))
-      configMap.Set(GuildID, config)
+      configStateMachine.Set(GuildID, state.GetNextStateFromMessage(s, m, config))
+      config.SaveConfig(kvConn)
     }
   })
 

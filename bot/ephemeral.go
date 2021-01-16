@@ -3,11 +3,16 @@ package bot
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/jack-michaud/ephemeral-server/bot/serverbridge"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
 var SERVER_TYPES = []string {
@@ -27,12 +32,74 @@ const (
   ANSIBLE_PROVISION
 )
 
-func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, textUpdateChannel chan string) {
+func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAction, config *Config, textUpdateChannel chan string) {
   ServerSize := config.Size
   ServerName := fmt.Sprintf("discord-%s", config.ServerId)
   ServerType := config.ServerType
   Region := config.Region
   log.SetPrefix(fmt.Sprintf("[ephemeralctl:%s] ", ServerName))
+
+  if (config.PrivateKey == nil) {
+    privateKey, err := GeneratePrivateKey()
+    if err != nil {
+      textUpdateChannel <- "Unable to generate keys for server. Could not run command :/"
+      log.Println("error: unable to generate private key: ", err)
+      return
+    } else {
+      log.Println("Generated new private keys")
+    }
+
+    config.PrivateKey = privateKey
+    config.SaveConfig(kvConn)
+  }
+
+  // Write public and private key to local cache for ansible
+  keysDir := fmt.Sprintf(".cache/config-%s/keys", ServerName)
+  err := os.MkdirAll(keysDir, 400)
+  if err != nil {
+    log.Println("Could not make keys directory:", err)
+    textUpdateChannel <- "Unable to write key locally. Could not run command :/"
+    return
+  }
+  err = ioutil.WriteFile(
+    fmt.Sprintf("%s/minecraft-%s", keysDir, ServerName),
+    GetPrivateKeyString(config.PrivateKey),
+    400,
+  )
+  if err != nil {
+    log.Println("Could not write public key file:", err)
+    textUpdateChannel <- "Unable to save public key. Could not run command :/"
+    return
+  }
+  publicKey, err := GetAuthorizedFilePublicKeyString(config.PrivateKey)
+  if err != nil {
+    log.Println("Could not write public key to string:", err)
+    textUpdateChannel <- "Unable to write key to server. Could not run command :/"
+    return
+  }
+  err = ioutil.WriteFile(
+    fmt.Sprintf("%s/minecraft-%s.pub", keysDir, ServerName),
+    publicKey,
+    400,
+  )
+  if err != nil {
+    log.Println("Could not write public key file:", err)
+    textUpdateChannel <- "Unable to save public key. Could not run command :/"
+    return
+  }
+
+  shutdownMinecraftServer := func() {
+    sshClient, err := serverbridge.ConnectToServer(ctx, &serverbridge.ConnectOptions{
+      ServerIpAddress: config.ServerIpAddress,
+      PrivateKey: config.PrivateKey,
+    }, kvConn)
+    if err == nil {
+      serverbridge.ShutdownMinecraftServer(ctx, sshClient)
+    } else {
+      log.Println(err)
+    }
+  }
+
 
   var Env []string = os.Environ()
   var Args []string = make([]string, 0)
@@ -68,22 +135,26 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
   case DESTROY_VPC:
     actionString = "Destroying server"
     actionFlag = "-d"
+    shutdownMinecraftServer()
   case DESTROY_ALL:
     actionString = "Destroying server and persistent device"
     actionFlag = "-D"
+    shutdownMinecraftServer()
   case CREATE:
     actionString = "Starting to create server"
     actionFlag = "-c"
   case GET_IP:
     actionString = "Getting IP"
     actionFlag = "-i"
+    textUpdateChannel <- *config.ServerIpAddress
+    return
   case ANSIBLE_PROVISION:
     actionString = "Reinstalling software..."
     actionFlag = "-I"
   }
 
-  EPHHEMERAL_BIN := "./ephemeralctl.sh"
-  cmd := exec.CommandContext(ctx, EPHHEMERAL_BIN, append(Args, actionFlag)...)
+  EPHEMERAL_BIN := "./ephemeralctl.sh"
+  cmd := exec.CommandContext(ctx, EPHEMERAL_BIN, append(Args, actionFlag)...)
   cmd.Env = Env
 
   log.Println("launch:", Args)
@@ -97,8 +168,12 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
     log.Println("error: could not get stderrpipe:", err)
   }
 
+
   cmd.Start()
-  // Read output
+  // This goroutine will:
+  // - Read output
+  // - Update discord channel
+  // - Set IP address
   go func() {
     scanner := bufio.NewScanner(stdoutPipe)
     for scanner.Scan() {
@@ -113,12 +188,15 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
           textUpdateChannel <- "Failed to create VPS"
         }
         if strings.Contains(line, "Successfully applied ansible") {
-          ip, err := exec.Command(EPHHEMERAL_BIN, append(Args, "-i")...).Output()
+          ip, err := exec.Command(EPHEMERAL_BIN, append(Args, "-i")...).Output()
+          ipString := strings.TrimSpace(string(ip))
           if err != nil {
             log.Println("Tried to get IP, but failed:", err)
             textUpdateChannel <- fmt.Sprintf("Successfully created %s server!", ServerType)
           } else {
-            textUpdateChannel <- fmt.Sprintf("Successfully created %s server! IP: %s:25565", ServerType, ip)
+            textUpdateChannel <- fmt.Sprintf("Successfully created %s server! IP: %s:25565", ServerType, ipString)
+            config.ServerIpAddress = &ipString
+            config.SaveConfig(kvConn)
           }
         }
         if strings.Contains(line, "Failed to apply ansible") {
@@ -129,6 +207,8 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
       if action == DESTROY_VPC {
         if strings.Contains(line, "Destroy complete!") {
           textUpdateChannel <- fmt.Sprintf("Shut down server.")
+          config.ServerIpAddress = nil
+          config.SaveConfig(kvConn)
         }
       }
       if action == DESTROY_ALL {
@@ -136,6 +216,8 @@ func RunEphemeral(ctx context.Context, action EphemeralAction, config *Config, t
           textUpdateChannel <- fmt.Sprintf(
             "Shut down server and deleted persistent data volume.",
           )
+          config.ServerIpAddress = nil
+          config.SaveConfig(kvConn)
         }
       }
     }

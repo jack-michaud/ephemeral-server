@@ -18,18 +18,18 @@ type DigitalOceanCreds struct {
   AccessKey string
 }
 
-type PrivateKey = []byte
 
 type Config struct {
   ServerId string
+  ServerIpAddress *string
   CloudProvider string
-  DigitalOceanCreds *DigitalOceanCreds
+  DigitalOceanCreds *DigitalOceanCreds `json:",omitempty"`
   Region string
   Size string
   // Aws.
-  AwsCreds *AwsCreds
+  AwsCreds *AwsCreds `json:",omitempty"`
   // Private key to access the VPS.
-  PrivateKey *PrivateKey
+  PrivateKey *PrivateKey `json:",omitempty"`
   ManagingRoleId string
   ServerType string
 }

@@ -494,7 +494,9 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
       helpText := "EphemeralServer Help\n" +
       "`>ephemeral config`: Runs through the setup wizard. For first type setup or full reconfigurations.\n" +
       "`>ephemeral set-type`: Sets the type of server to boot up.\n" +
-      "`>ephemeral set-size`: Sets the size of server to boot up. Use `>wq` when confirming to skip out of the rest of the wizard.\n"
+      "`>ephemeral set-size`: Sets the size of server to boot up. Use `>wq` when confirming to skip out of the rest of the wizard.\n" +
+      "`>ephemeral up`: Brings up the server\n" +
+      "`>ephemeral down`: Takes down the server\n"
       s.ChannelMessageSend(
         m.ChannelID,
         helpText,
@@ -517,6 +519,9 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
       if actionString == "down" {
         action = DESTROY_VPC
       }
+      if actionString == "ip" {
+        action = GET_IP
+      }
 
       if action != NO_OP {
         messageChannel := make(chan string, 1)
@@ -529,7 +534,7 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
             )
           }
         }()
-        RunEphemeral(ctx, action, config, messageChannel)
+        RunEphemeral(ctx, kvConn, action, config, messageChannel)
       }
       return nil, &rootState
     },
@@ -541,7 +546,7 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
   rootState.AddState(`^>eph[emeral]* set-size`, askSize)
   rootState.AddState(`^>eph[emeral]* help$`, helpStep)
 
-  rootState.AddState(`^>eph[emeral]* (up|down|wipe)$`, ephemeralCtlState)
+  rootState.AddState(`^>eph[emeral]* (up|down|wipe|ip)$`, ephemeralCtlState)
 
   configRoot.AddState(`>cancel`, cancelStep)
   configRoot.AddState(`>continue`, askCloudProviderStep)
