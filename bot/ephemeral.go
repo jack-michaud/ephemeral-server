@@ -55,7 +55,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
 
   // Write public and private key to local cache for ansible
   keysDir := fmt.Sprintf(".cache/config-%s/keys", ServerName)
-  err := os.MkdirAll(keysDir, 400)
+  err := os.MkdirAll(keysDir, 0700)
   if err != nil {
     log.Println("Could not make keys directory:", err)
     textUpdateChannel <- "Unable to write key locally. Could not run command :/"
@@ -64,7 +64,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
   err = ioutil.WriteFile(
     fmt.Sprintf("%s/minecraft-%s", keysDir, ServerName),
     GetPrivateKeyString(config.PrivateKey),
-    400,
+    0700,
   )
   if err != nil {
     log.Println("Could not write public key file:", err)
@@ -80,7 +80,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
   err = ioutil.WriteFile(
     fmt.Sprintf("%s/minecraft-%s.pub", keysDir, ServerName),
     publicKey,
-    400,
+    0700,
   )
   if err != nil {
     log.Println("Could not write public key file:", err)
