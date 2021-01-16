@@ -19,6 +19,16 @@
   debug:
     msg: "{{ launch_command }}"
 
+- name: Download rcon 0.7.1
+  ansible.builtin.unarchive:
+    src: https://github.com/Tiiffi/mcrcon/releases/download/v0.7.1/mcrcon-0.7.1-linux-x86-64.tar.gz
+    dest: '{{ persistent_mount }}'
+    remote_src: yes
+    owner: minecraft
+    group: minecraft
+- name: Move rcon to binaries
+  shell: 'cp {{ persistent_mount }}/mcrcon-0.7.1-linux-x86-64/mcrcon /usr/bin/mcrcon'
+
 - name: Generate minecraft systemd service
   template:
     src: mc-server.service
