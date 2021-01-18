@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,6 +18,7 @@ import (
 func main()  {
 
   ServerId := flag.String("serverId", "", "Specifies the server ID of the VPS to connect to")
+  cmd := flag.String("cmd", "", "command to run on VPS")
   flag.Parse()
 
   if len(*ServerId) == 0 {
@@ -40,6 +43,8 @@ func main()  {
   if err != nil {
     log.Fatalln("could not fetch config:", err)
   }
+  b, _ := json.Marshal(config)
+  fmt.Println(string(b))
 
   client, err := bridge.ConnectToServer(ctx, &bridge.ConnectOptions{
     PrivateKey: config.PrivateKey,
@@ -57,8 +62,13 @@ func main()  {
     }
   }()
 
-  cmd := "sudo journalctl -f -u mc-server.service"
-  stdOutLines, _, _, err := bridge.RunCommand(ctx, client, cmd)
+
+  var stdOutLines chan string
+  if *cmd == "" {
+    stdOutLines, _, _, err = bridge.RunCommand(ctx, client, "sudo journalctl -f -u mc-server.service")
+  } else {
+    stdOutLines, _, _, err = bridge.RunCommand(ctx, client, *cmd)
+  }
   if err != nil {
     log.Fatalln("could not run command:", err)
   } else {

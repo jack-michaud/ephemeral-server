@@ -2,7 +2,7 @@ resource "aws_ebs_volume" "mc_vol" {
   tags = {
     name = "minecraft-volume-${var.server_name}"
   }
-  availability_zone = var.region 
+  availability_zone = local.availability_zone 
   size = 20
 }
 
@@ -50,7 +50,7 @@ resource "aws_instance" "minecraft" {
   tags = {
     name   = "minecraft-server-${var.server_name}"
   }
-  availability_zone = var.region
+  availability_zone = local.availability_zone
   instance_type   = var.instance_size
 
   user_data = local.user_data

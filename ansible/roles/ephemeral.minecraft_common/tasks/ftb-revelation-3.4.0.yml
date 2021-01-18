@@ -1,0 +1,28 @@
+- name: Include ftb-revelation-3.4.0 variables
+  include_vars:
+    file: ../vars/ftb-revelation-3.4.0.yml
+- name: Make ftb-revelation-3.4.0 folder
+  file: 
+    path: "{{ working_dir }}"
+    state: directory
+    mode: '0755'
+    owner: minecraft
+    group: minecraft
+- name: Download & unzip ftb-revelation-3.4.0 Server
+  get_url:
+    url: https://api.modpacks.ch/public/modpack/35/174/server/linux
+    dest: "{{ working_dir }}/install"
+    group: minecraft
+    owner: minecraft
+    mode: '0755'
+- name: Check forge location
+  stat:
+    path: "{{ working_dir }}/forge-1.12.2-14.23.5.2846-universal.jar"
+  register: var_forge_location
+- name: Run modpack install
+  shell: "./install 35 && chown -R minecraft:minecraft ."
+  args:
+    chdir: "{{ working_dir }}"
+  when: 'not var_forge_location.stat.exists'
+- name: Agree to EULA
+  shell: "echo 'eula=true' > {{ working_dir }}/eula.txt"

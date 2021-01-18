@@ -29,11 +29,11 @@ RUN mv terraform /bin/terraform
 
 WORKDIR /code
 
+ADD . /code/
+
 RUN chown -R eph:eph /code
 
 USER eph
-
-ADD . /code/
 
 RUN make
 CMD ["/code/build/ephemeralbot"]

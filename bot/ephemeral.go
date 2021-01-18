@@ -17,6 +17,7 @@ import (
 var SERVER_TYPES = []string {
   "vanilla-1.16.4",
   "skyfactory-4.2.2",
+  "ftb-revelation-3.4.0",
 }
 
 // Ephemeralctl actions
@@ -54,7 +55,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
 
   // Write public and private key to local cache for ansible
   keysDir := fmt.Sprintf(".cache/config-%s/keys", ServerName)
-  err := os.MkdirAll(keysDir, 400)
+  err := os.MkdirAll(keysDir, 0700)
   if err != nil {
     log.Println("Could not make keys directory:", err)
     textUpdateChannel <- "Unable to write key locally. Could not run command :/"
@@ -63,7 +64,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
   err = ioutil.WriteFile(
     fmt.Sprintf("%s/minecraft-%s", keysDir, ServerName),
     GetPrivateKeyString(config.PrivateKey),
-    400,
+    0700,
   )
   if err != nil {
     log.Println("Could not write public key file:", err)
@@ -79,7 +80,7 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
   err = ioutil.WriteFile(
     fmt.Sprintf("%s/minecraft-%s.pub", keysDir, ServerName),
     publicKey,
-    400,
+    0700,
   )
   if err != nil {
     log.Println("Could not write public key file:", err)
@@ -145,7 +146,11 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
   case GET_IP:
     actionString = "Getting IP"
     actionFlag = "-i"
-    textUpdateChannel <- *config.ServerIpAddress
+    if config.ServerIpAddress == nil {
+      textUpdateChannel <- "Couldn't find an IP."
+    } else {
+      textUpdateChannel <- *config.ServerIpAddress
+    }
     return
   case ANSIBLE_PROVISION:
     actionString = "Reinstalling software..."
@@ -187,10 +192,12 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
           textUpdateChannel <- "Failed to create VPS"
         }
         if strings.Contains(line, "Successfully applied ansible") {
-          ip, err := exec.Command(EPHEMERAL_BIN, append(Args, "-i")...).Output()
+          cmd := exec.Command(EPHEMERAL_BIN, append(Args, "-i")...)
+          cmd.Env = Env
+          ip, err := cmd.Output()
           ipString := strings.TrimSpace(string(ip))
           if err != nil {
-            log.Println("Tried to get IP, but failed:", err)
+            log.Println("Tried to get IP, but failed:", err, ".. stdout: ", ipString)
             textUpdateChannel <- fmt.Sprintf("Successfully created %s server!", ServerType)
           } else {
             textUpdateChannel <- fmt.Sprintf("Successfully created %s server! IP: %s:25565", ServerType, ipString)
