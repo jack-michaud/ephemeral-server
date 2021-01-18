@@ -17,6 +17,15 @@ import (
 // java[15054]: [09:34:56] [RCON Client /127.0.0.1 #11/INFO]: Thread RCON Client /127.0.0.1 shutting down
 // java[15054]: [09:35:19] [Server thread/INFO]: <_lomz_> test
 
+// FTB 
+// java[4146]: [06:22:11] [Server thread/INFO] [minecraft/DedicatedServer]: <BeastboyGelbo> jack is a wizard
+// java[4146]: [06:23:01] [Server thread/INFO] [minecraft/DedicatedServer]: <BeastboyGelbo> who's beastboy gelbo
+
+
+// Startup
+// java[4050]: [06:34:42] [Server thread/INFO] [minecraft/DedicatedServer]: Done (10.247s)! For help, type "help" or "?"
+
+
 type Bridge struct {
   sshClient *ssh.Client
   discordSession *discordgo.Session
