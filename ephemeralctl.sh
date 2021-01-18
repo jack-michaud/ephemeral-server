@@ -72,7 +72,7 @@ function apply_terraform {
     status=$?
 
     popd > /dev/null
-    test $status && echo 'Successfully applied terraform' || echo 'Failed to apply terraform'
+    test $status == 0 && echo 'Successfully applied terraform' || echo 'Failed to apply terraform'
     return $status
 }
 
@@ -130,7 +130,7 @@ function ansible_install {
     $ansible_dir/main.yml
   status=$?
 
-  test $status && echo 'Successfully applied ansible' || echo 'Failed to apply ansible'
+  test $status == 0 && echo 'Successfully applied ansible' || echo 'Failed to apply ansible'
   return $status
 }
 
