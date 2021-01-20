@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"bufio"
-	"context"
+"bufio"
+"context"
 	"fmt"
 	"io/ioutil"
 	"log"
