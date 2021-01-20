@@ -1,0 +1,11 @@
+#!/bin/sh
+
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/bot_tests)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/cmd/remote)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/cmd/run)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/store)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/crypt)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot/serverbridge)
+test -z $(go fmt github.com/jack-michaud/ephemeral-server/bot)
+
+test -z $(gofmt -l bot)
