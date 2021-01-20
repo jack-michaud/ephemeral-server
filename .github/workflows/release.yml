@@ -1,0 +1,27 @@
+name: Run release
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps: 
+    - uses: actions/checkout@v2
+    - name: run
+      uses: cedrickring/golang-action@1.6.0
+      with:
+        args: ./bin/test
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+    - name: Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: yarn run semantic-release
+
+
