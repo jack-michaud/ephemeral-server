@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  consul:
+    image: consul
+    command: consul agent -bootstrap -config-file /consul/config/consul.json -client=0.0.0.0
+    volumes:
+    - consul-data:/consul/data
+    - ./consul/:/consul/config
+    healthcheck:
+      test: ["CMD", "nc", "-zv", "localhost", "8500"]
+      timeout: 10s
+      interval: 10s
+      retries: 5
+
+  
+  ephbot:
+    env_file: ./.env
+    depends_on:
+      consul:
+        condition: service_healthy
+    build: 
+      context: ./
+      args: 
+        TARGETPLATFORM: linux/amd64
+
+    environment:
+      - CONSUL_ADDRESS=consul:8500
+      # AES-256 key used to encrypt configs.
+      - SECRET_KEY
+      # Bot access key
+      - DISCORD_CLIENT_SECRET
+
+volumes:
+  consul-data:

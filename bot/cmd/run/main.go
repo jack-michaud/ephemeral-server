@@ -17,17 +17,19 @@ func main() {
 	if discordSecret == "" {
 		log.Fatalln("DISCORD_CLIENT_SECRET not found in env")
 	}
-	//consulAddress := os.Getenv("CONSUL_ADDRESS")
-	//if (consulAddress == "") {
-	//  log.Fatalln("CONSUL_ADDRESS not found in env")
-	//}
+	consulAddress := os.Getenv("CONSUL_ADDRESS")
+	if consulAddress == "" {
+		log.Fatalln("CONSUL_ADDRESS not found in env")
+	}
 	if os.Getenv("SECRET_KEY") == "" {
 		log.Fatalln("SECRET_KEY not found in env")
 	}
 
 	// initialize kv store (consul)
 	var kvConn store.IKVStore
-	kvConn, err := store.NewKVConsul(consul.DefaultConfig())
+	config := consul.DefaultConfig()
+	config.Address = consulAddress
+	kvConn, err := store.NewKVConsul(config)
 	if err != nil {
 		log.Fatalln("could not initialize consul:", err)
 	}
