@@ -1,6 +1,7 @@
 # Ephemeral Server
 
 ![Config Demo](./assets/config-demo.png)
+![Start Demo](./assets/start-server.png)
 
 Hosting as you need it.
 
