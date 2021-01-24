@@ -1,5 +1,7 @@
 # Ephemeral Server
 
+![Config Demo](./assets/config-demo.png)
+
 Hosting as you need it.
 
 Provides a wrapper around `terraform` and `ansible` that will automatically install
