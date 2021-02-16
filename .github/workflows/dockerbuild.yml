@@ -3,7 +3,7 @@ name: Release Docker Image
 on:
   release:
     types:
-    - published
+    - created
 
 jobs:
   docker-build:
