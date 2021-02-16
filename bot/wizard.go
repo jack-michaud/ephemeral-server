@@ -520,6 +520,9 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
 			if actionString == "down" {
 				action = DESTROY_VPC
 			}
+			if actionString == "off" {
+				action = DESTROY_VPC
+			}
 			if actionString == "ip" {
 				action = GET_IP
 			}
@@ -547,7 +550,7 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
 	rootState.AddState(`^>eph[emeral]* set-size`, askSize)
 	rootState.AddState(`^>eph[emeral]* help$`, helpStep)
 
-	rootState.AddState(`^>eph[emeral]* (up|down|wipe|ip)$`, ephemeralCtlState)
+	rootState.AddState(`^>eph[emeral]* (up|off|down|wipe|ip)$`, ephemeralCtlState)
 
 	configRoot.AddState(`>cancel`, cancelStep)
 	configRoot.AddState(`>continue`, askCloudProviderStep)
