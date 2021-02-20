@@ -38,3 +38,28 @@ SkyFactory 4 ([mod details](https://www.curseforge.com/minecraft/modpacks/skyfac
 `>ephemeral set-type` 
 `>ephemeral set-type skyfactory-4.2.2` 
 
+
+## Developing
+
+Dependencies:
+- `docker-compose >= 1.27.0` 
+
+
+### Building in Docker Image
+
+```
+# Get it running
+docker-compose build
+docker-compose up -d
+
+# Tail logs
+docker-compose logs -f
+```
+
+```
+# After making a change, rebuild and restart bot
+docker-compose build ephbot
+docker-compose restart ephbot
+```
+
+
