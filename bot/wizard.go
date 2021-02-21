@@ -1,3 +1,7 @@
+// Wizard
+// Responsible for the config state machine/setup wizard.
+// Defines commands the bot can use.
+
 package bot
 
 import (
@@ -28,6 +32,14 @@ type State struct {
 	nextStates map[string]State
 }
 
+// Takes in a discord session, discord message, and server specific config.
+//
+// Iterates through all possible next States on this state to see if there's a regex match in the
+// message.
+// If a message matches the next state, the next state's action is run.
+// If the next state's action returns a new state, that state is returned.
+// If there was an error from running the action, the initial state is returned.
+// otherwise, the next state is returned.
 func (s *State) GetNextStateFromMessage(session *discordgo.Session, message *discordgo.MessageCreate, config *Config) State {
 	messageContent := message.Content
 	for pattern, nextState := range s.nextStates {
@@ -40,15 +52,12 @@ func (s *State) GetNextStateFromMessage(session *discordgo.Session, message *dis
 		if strings != nil {
 			log.Println(message.GuildID, "state:", nextState.id)
 			err, forcedNextState := nextState.Action(session, message, config, strings[0])
-			if err != nil {
-				log.Println(message.GuildID, "error running state action:", err)
-				if forcedNextState != nil {
-					return *forcedNextState
-				}
-				return *s
-			}
 			if forcedNextState != nil {
 				return *forcedNextState
+			}
+			if err != nil {
+				log.Println(message.GuildID, "error running state action:", err)
+				return *s
 			}
 			return nextState
 		}
@@ -56,10 +65,13 @@ func (s *State) GetNextStateFromMessage(session *discordgo.Session, message *dis
 	return *s
 }
 
+// Adds a given state to the list of possible next states.
 func (s *State) AddState(pattern string, newState State) {
 	s.nextStates[pattern] = newState
 }
 
+// ConfigStateMachine stores the state of each guild ID.
+// guildId -> State
 type ConfigStateMachine struct {
 	rwmap sync.Map
 }
@@ -82,6 +94,7 @@ func (cm *ConfigStateMachine) Set(key string, state State) {
 	cm.rwmap.Store(key, state)
 }
 
+// Creates a new state (helper)
 func NewState(id string, action Action) State {
 	nextStates := make(map[string]State)
 	return State{
