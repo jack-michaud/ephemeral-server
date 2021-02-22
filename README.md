@@ -44,22 +44,18 @@ SkyFactory 4 ([mod details](https://www.curseforge.com/minecraft/modpacks/skyfac
 Dependencies:
 - `docker-compose >= 1.27.0` 
 
+### Building and Running
 
-### Building in Docker Image
+These helper scripts use `docker-compose` to get the bot up and running.
 
 ```
 # Get it running
-docker-compose build
-docker-compose up -d
-
-# Tail logs
-docker-compose logs -f
+./bin/run_local
 ```
 
 ```
 # After making a change, rebuild and restart bot
-docker-compose build ephbot
-docker-compose restart ephbot
+./bin/rebuild
 ```
 
 

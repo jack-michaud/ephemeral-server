@@ -1,7 +1,7 @@
 #!/bin/sh
 
 base_dir=$(git rev-parse --show-toplevel)
-
 cd $base_dir
-docker-compose build
-docker-compose up
+
+docker-compose down
+./bin/run_local
