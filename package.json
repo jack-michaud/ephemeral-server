@@ -2,17 +2,25 @@
   "version": "0.0.5",
   "scripts": {
     "format": "bin/format",
-    "setup": "pre-commit"
+    "postinstall": "husky install"
   },
   "devDependencies": {
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
     "@semantic-release/commit-analyzer": "^8.0.1",
     "@semantic-release/git": "^9.0.0",
     "@semantic-release/github": "^7.2.0",
     "@semantic-release/release-notes-generator": "^9.0.1",
-    "pre-commit": "^1.2.2",
+    "cz-conventional-changelog": "3.3.0",
+    "husky": "^5.1.0",
     "semantic-release": "^17.3.4"
   },
-  "pre-commit": [
-    "format"
-  ]
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
+  }
 }
