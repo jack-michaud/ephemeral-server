@@ -33,6 +33,13 @@ type Config struct {
 	ServerType     string
 }
 
+func (c *Config) HasBeenConfigured() bool {
+	if c.DigitalOceanCreds == nil && c.AwsCreds == nil {
+		return false
+	}
+	return true
+}
+
 func GetSecretKey() []byte {
 	return []byte(os.Getenv("SECRET_KEY"))
 }

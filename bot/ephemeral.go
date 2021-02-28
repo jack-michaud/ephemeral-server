@@ -40,6 +40,12 @@ func RunEphemeral(ctx context.Context, kvConn store.IKVStore, action EphemeralAc
 	Region := config.Region
 	log.SetPrefix(fmt.Sprintf("[ephemeralctl:%s] ", ServerName))
 
+	if !config.HasBeenConfigured() {
+		log.Println("Called RunEphemeral without configuring")
+		textUpdateChannel <- "Could not run. Did you configure yet?"
+		return
+	}
+
 	if config.PrivateKey == nil {
 		privateKey, err := GeneratePrivateKey()
 		if err != nil {
