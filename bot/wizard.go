@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/jack-michaud/ephemeral-server/bot/serverbridge"
 	"github.com/jack-michaud/ephemeral-server/bot/store"
 )
 
@@ -462,11 +463,44 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
 				"`>ephemeral set-size`: Sets the size of server to boot up. Use `>wq` when confirming to skip out of the rest of the wizard.\n" +
 				"`>ephemeral set-role`: Sets the managing role.\n" +
 				"`>ephemeral up`: Brings up the server\n" +
-				"`>ephemeral down`: Takes down the server\n"
+				"`>ephemeral down`: Takes down the server\n" +
+				"`>ephemeral restart-server`: Restarts the server process.\n"
 			s.ChannelMessageSend(
 				m.ChannelID,
 				helpText,
 			)
+			return nil, &rootState
+		},
+	)
+
+	restartServer := NewState(
+		"restart-server",
+		func(s *discordgo.Session, m *discordgo.MessageCreate, config *Config, args []string) (error, *State) {
+			s.ChannelMessageSend(
+				m.ChannelID,
+				"Restarting server...(for big modpacks, this can take a while)",
+			)
+
+			sshClient, err := ConnectToServerFromServerId(ctx, m.GuildID, kvConn)
+			if err != nil {
+				s.ChannelMessageSend(
+					m.ChannelID,
+					fmt.Sprintf("Could not restart server: %s", err),
+				)
+				return nil, &rootState
+			}
+			err = serverbridge.RestartMinecraftServer(ctx, sshClient)
+			if err != nil {
+				s.ChannelMessageSend(
+					m.ChannelID,
+					fmt.Sprintf("Could not restart server: %s", err),
+				)
+			} else {
+				s.ChannelMessageSend(
+					m.ChannelID,
+					"Triggered restart",
+				)
+			}
 			return nil, &rootState
 		},
 	)
@@ -514,6 +548,7 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
 	rootState.AddState(`^>eph[emeral]* set-type (.+)`, handleServerType)
 	rootState.AddState(`^>eph[emeral]* set-size`, askSize)
 	rootState.AddState(`^>eph[emeral]* set-role`, askSetupManagingRoleFromRoot)
+	rootState.AddState(`^>eph[emeral]* restart-server`, restartServer)
 	rootState.AddState(`^>eph[emeral]* help$`, helpStep)
 
 	askSetupManagingRoleFromRoot.AddState(`>cancel`, cancelStep)

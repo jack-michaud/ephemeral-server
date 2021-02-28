@@ -1,12 +1,15 @@
 package bot
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 
+	"github.com/jack-michaud/ephemeral-server/bot/serverbridge"
+	"github.com/jack-michaud/ephemeral-server/bot/store"
 	"golang.org/x/crypto/ssh"
 	//"golang.org/x/crypto/ssh"
 )
@@ -40,4 +43,34 @@ func GetPrivateKeyString(pk *PrivateKey) []byte {
 	}
 	bytes := pem.EncodeToMemory(&block)
 	return bytes
+}
+
+// Opens an ssh connection to a given server ID's VPS.
+// If a server isn't created (no IP stored for it) an error will be returned.
+// If no private key is stored, an error will be returned.
+func ConnectToServerFromServerId(ctx context.Context, Id string, conn store.IKVStore) (*ssh.Client, error) {
+	config, err := GetConfigForServerId(Id, conn)
+	if err != nil {
+		return nil, fmt.Errorf("could not get config: %s", err)
+	}
+
+	if config.ServerIpAddress == nil {
+		return nil, fmt.Errorf("Could not connect to server: No IP. Is the server up?")
+	}
+	if config.PrivateKey == nil {
+		return nil, fmt.Errorf(
+			"Could not connect to server: No private key. Have you started the server before?",
+		)
+	}
+
+	sshClient, err := serverbridge.ConnectToServer(ctx, &serverbridge.ConnectOptions{
+		ServerIpAddress: config.ServerIpAddress,
+		PrivateKey:      config.PrivateKey,
+	}, conn)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to server: %s", err)
+	}
+
+	return sshClient, nil
 }
