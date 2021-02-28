@@ -25,9 +25,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	consulAddress := os.Getenv("CONSUL_ADDRESS")
+	if consulAddress == "" {
+		log.Fatalln("CONSUL_ADDRESS not found in env")
+	}
+	if os.Getenv("SECRET_KEY") == "" {
+		log.Fatalln("SECRET_KEY not found in env")
+	}
+
 	// initialize kv store (consul)
+	consulConfig := consul.DefaultConfig()
+	consulConfig.Address = consulAddress
 	var kvConn store.IKVStore
-	kvConn, err := store.NewKVConsul(consul.DefaultConfig())
+	kvConn, err := store.NewKVConsul(consulConfig)
+
 	defer kvConn.Cleanup()
 	if err != nil {
 		log.Fatalln("could not initialize consul:", err)
