@@ -47,7 +47,7 @@ function initialize {
   cat <<EOF > terraform.tf
 terraform {
   backend "consul" {
-    address = "127.0.0.1:8500"
+    address = "$CONSUL_ADDRESS"
     scheme  = "http"
     path    = "tfstate/${SERVER_NAME}-server"
   }
