@@ -1,0 +1,17 @@
+- name: include vanilla variables
+  include_vars:
+    file: ../vars/vanilla-1.18.2.yml
+- name: Make vanilla folder
+  file: 
+    path: "{{ working_dir }}"
+    state: directory
+    mode: '0755'
+    owner: minecraft
+    group: minecraft
+- name: Download Vanilla 1.18.2 jar
+  get_url:
+    url: https://launcher.mojang.com/v1/objects/c8f83c5655308435b3dcf03c06d9fe8740a77469/server.jar
+    dest: "{{ working_dir }}/minecraft_server.1.18.2.jar"
+- name: Agree to EULA
+  shell: "echo 'eula=true' > {{ working_dir }}/eula.txt"
+

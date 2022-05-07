@@ -1,7 +1,7 @@
 resource "digitalocean_volume" "mc_vol" {
-  name   = "minecraft-volume-${var.server_name}"
-  region = "nyc1"
-  size = 20
+  name                    = "minecraft-volume-${var.server_name}"
+  region                  = var.region
+  size                    = 20
   initial_filesystem_type = "ext4"
 }
 
@@ -19,5 +19,5 @@ resource "digitalocean_droplet" "minecraft" {
 
 resource "digitalocean_volume_attachment" "minecraft-vol-attach" {
   droplet_id = digitalocean_droplet.minecraft.id
-  volume_id = digitalocean_volume.mc_vol.id
+  volume_id  = digitalocean_volume.mc_vol.id
 }

@@ -1,0 +1,4 @@
+java_version: openjdk-17-jre-headless
+working_dir: "{{ persistent_mount }}/vanilla-1.18.2"
+launch_command: "/usr/bin/java -Xmx{{ ((var_total_memory.stdout | int) / 2) | int }}M -Xms{{ ((var_total_memory.stdout | int) / 2) | int }}M -jar {{ working_dir }}/minecraft_server.1.18.2.jar nogui"
+

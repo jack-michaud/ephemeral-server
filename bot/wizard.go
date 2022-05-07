@@ -513,7 +513,8 @@ func InitializeConfigStateMachine(ctx context.Context, kvConn store.IKVStore) St
 	rootState.AddState(`^>eph[emeral]* set-type`, askServerType)
 	rootState.AddState(`^>eph[emeral]* set-type (.+)`, handleServerType)
 	rootState.AddState(`^>eph[emeral]* set-size`, askSize)
-	rootState.AddState(`^>eph[emeral]* set-role`, askSetupManagingRoleFromRoot)
+	rootState.AddState(`^>eph[emeral]* set-size`, askSize)
+	rootState.AddState(`^>eph[emeral]* set-region`, askRegion)
 	rootState.AddState(`^>eph[emeral]* help$`, helpStep)
 
 	askSetupManagingRoleFromRoot.AddState(`>cancel`, cancelStep)

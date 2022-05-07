@@ -16,6 +16,7 @@ import (
 
 var SERVER_TYPES = []string{
 	"vanilla-1.16.4",
+	"vanilla-1.18.2",
 	"skyfactory-4.2.2",
 	"ftb-revelation-3.4.0",
 }
